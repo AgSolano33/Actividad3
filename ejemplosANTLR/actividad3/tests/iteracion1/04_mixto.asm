@@ -8,65 +8,81 @@ str_4: .asciiz "FIN"
     .text
     .globl main
 main:
-    # print "--- Tabla de equivalencias ---"
+    # expr STRING "--- Tabla de equivalencias ---"
+    la   $t0, str_0
+    # print string (consume $t0)
+    move $a0, $t0
     li   $v0, 4
-    la   $a0, str_0
     syscall
     # newline (LF)
     li   $v0, 11
     li   $a0, 10
     syscall
-    # print "Decimal:"
+    # expr STRING "Decimal:"
+    la   $t0, str_1
+    # print string (consume $t0)
+    move $a0, $t0
     li   $v0, 4
-    la   $a0, str_1
     syscall
     # newline (LF)
     li   $v0, 11
     li   $a0, 10
     syscall
-    # print 255  (= 255)
+    # expr INT 255
+    li   $t0, 255
+    # print int (consume $t0)
+    move $a0, $t0
     li   $v0, 1
-    li   $a0, 255
     syscall
     # newline (LF)
     li   $v0, 11
     li   $a0, 10
     syscall
-    # print "Hex:"
+    # expr STRING "Hex:"
+    la   $t0, str_2
+    # print string (consume $t0)
+    move $a0, $t0
     li   $v0, 4
-    la   $a0, str_2
     syscall
     # newline (LF)
     li   $v0, 11
     li   $a0, 10
     syscall
-    # print [FF:16]  (= 255)
+    # expr BASED [FF:16]  (= 255)
+    li   $t0, 255
+    # print int (consume $t0)
+    move $a0, $t0
     li   $v0, 1
-    li   $a0, 255
     syscall
     # newline (LF)
     li   $v0, 11
     li   $a0, 10
     syscall
-    # print "Bin:"
+    # expr STRING "Bin:"
+    la   $t0, str_3
+    # print string (consume $t0)
+    move $a0, $t0
     li   $v0, 4
-    la   $a0, str_3
     syscall
     # newline (LF)
     li   $v0, 11
     li   $a0, 10
     syscall
-    # print [11111111:2]  (= 255)
+    # expr BASED [11111111:2]  (= 255)
+    li   $t0, 255
+    # print int (consume $t0)
+    move $a0, $t0
     li   $v0, 1
-    li   $a0, 255
     syscall
     # newline (LF)
     li   $v0, 11
     li   $a0, 10
     syscall
-    # print "FIN"
+    # expr STRING "FIN"
+    la   $t0, str_4
+    # print string (consume $t0)
+    move $a0, $t0
     li   $v0, 4
-    la   $a0, str_4
     syscall
     # newline (LF)
     li   $v0, 11

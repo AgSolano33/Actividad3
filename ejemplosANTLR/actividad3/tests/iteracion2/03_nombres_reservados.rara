@@ -1,0 +1,17 @@
+# Iteración 2 — Variables con nombre = instrucción MIPS
+# Este test es LA TRAMPA del enunciado: si el compilador usara el nombre
+# tal cual como label, el .asm tendría una línea `add: .word 0` y luego
+# `lw $a0, add` — algunos ensambladores se confunden y otros simplemente
+# tratan `add` como un label igual a cualquier otro. El compilador
+# RaraLang los re-mangla con prefijo `v_` para sacarlos del namespace
+# de instrucciones.
+# Salida esperada en QtSPIM:
+#   7
+#   42
+#   100
+add <-- 7
+sub <-- 42
+div <-- 100
+print add
+print sub
+print div

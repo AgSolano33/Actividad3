@@ -1,0 +1,17 @@
+# Iteración 2 — Variables alimentadas desde literales en otras bases,
+# mezcladas con strings y prints de literales (regresión iter 1).
+# También cubre la "trampa silenciosa": `huerfana` se lee SIN asignarse,
+# por lo que debe imprimir 0 (porque .word 0 la inicializa).
+# Salida esperada en QtSPIM:
+#   --- mezcla ---
+#   255
+#   10
+#   0
+#   1
+hex_var <-- [FF:16]
+bin_var <-- [1010:2]
+print "--- mezcla ---"
+print hex_var
+print bin_var
+print huerfana
+print 1

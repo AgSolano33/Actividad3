@@ -1,0 +1,16 @@
+# Iteración 2 — Reasignación + lectura cruzada
+# Verifica que:
+#   - reasignar una variable no realloca (solo emite sw)
+#   - asignar `b <-- a` copia el valor que tiene `a` en ese momento
+#   - cambiar `a` después NO afecta a `b` (semántica por valor)
+# Salida esperada en QtSPIM:
+#   1
+#   2
+#   1
+contador <-- 1
+print contador
+contador <-- 2
+print contador
+copia <-- contador
+contador <-- 99
+print copia

@@ -1,0 +1,21 @@
+# Iteración 1 — Mezcla de tipos
+# Combina los tres tipos de literal (int, base no convencional, string) en
+# un mismo programa. Útil para confirmar que el orden de los prints se
+# preserva y que .data + .text se ensamblan correctamente.
+# Salida esperada en QtSPIM:
+#   --- Tabla de equivalencias ---
+#   Decimal:
+#   255
+#   Hex:
+#   255
+#   Bin:
+#   255
+#   FIN
+print "--- Tabla de equivalencias ---"
+print "Decimal:"
+print 255
+print "Hex:"
+print [FF:16]
+print "Bin:"
+print [11111111:2]
+print "FIN"

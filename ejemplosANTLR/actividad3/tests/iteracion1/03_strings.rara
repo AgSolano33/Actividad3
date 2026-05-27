@@ -1,0 +1,12 @@
+# Iteración 1 — Strings
+# Casos: string normal, string con espacios y signos, string vacío,
+# string que se parece a un número (no debe interpretarse como tal).
+# Salida esperada en QtSPIM:
+#   hola mundo
+#   RaraLang funciona!
+#   (línea en blanco — el string vacío solo aporta su newline)
+#   123 no es un entero aqui
+print "hola mundo"
+print "RaraLang funciona!"
+print ""
+print "123 no es un entero aqui"

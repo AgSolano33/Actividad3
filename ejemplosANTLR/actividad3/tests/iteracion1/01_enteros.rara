@@ -1,0 +1,11 @@
+# Iteración 1 — Enteros decimales
+# Cubre: literal pequeño, cero, literal grande, varios prints seguidos.
+# Salida esperada en QtSPIM:
+#   5
+#   0
+#   1000
+#   42
+print 5
+print 0
+print 1000
+print 42

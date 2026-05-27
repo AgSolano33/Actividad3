@@ -8,8 +8,8 @@ import glob
 from pathlib import Path
 from antlr4 import CommonTokenStream, FileStream, ParseTreeWalker
 
-from antlr.RaraLangLexer import RaraLangLexer
-from antlr.RaraLangParser import RaraLangParser
+from antlr.generated.RaraLangLexer import RaraLangLexer
+from antlr.generated.RaraLangParser import RaraLangParser
 from MIPSListener import MIPSListener
 
 

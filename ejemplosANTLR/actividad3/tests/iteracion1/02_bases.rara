@@ -1,0 +1,16 @@
+# Iteración 1 — Números en bases no convencionales
+# 255 = [FF:16] = [377:8] = [11111111:2]  → las 4 primeras líneas deben coincidir.
+# Luego [1010:2] = 10 y [10:16] = 16, para mostrar que la base sí cambia el valor.
+# Salida esperada en QtSPIM:
+#   255
+#   255
+#   255
+#   255
+#   10
+#   16
+print 255
+print [FF:16]
+print [377:8]
+print [11111111:2]
+print [1010:2]
+print [10:16]

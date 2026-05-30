@@ -7,7 +7,7 @@ v_copia: .word 0
 main:
     # INT 1 → $t0
     li   $t0, 1
-    # contador <-- (consume $t0)
+    # contador <-- (consume $t0)  → v_contador
     sw   $t0, v_contador
     # VAR contador (v_contador) → $t0
     lw   $t0, v_contador
@@ -21,7 +21,7 @@ main:
     syscall
     # INT 2 → $t0
     li   $t0, 2
-    # contador <-- (consume $t0)
+    # contador <-- (consume $t0)  → v_contador
     sw   $t0, v_contador
     # VAR contador (v_contador) → $t0
     lw   $t0, v_contador
@@ -35,11 +35,11 @@ main:
     syscall
     # VAR contador (v_contador) → $t0
     lw   $t0, v_contador
-    # copia <-- (consume $t0)
+    # copia <-- (consume $t0)  → v_copia
     sw   $t0, v_copia
     # INT 99 → $t0
     li   $t0, 99
-    # contador <-- (consume $t0)
+    # contador <-- (consume $t0)  → v_contador
     sw   $t0, v_contador
     # VAR copia (v_copia) → $t0
     lw   $t0, v_copia
@@ -52,7 +52,7 @@ main:
     li   $a0, 10
     syscall
 
-    # exit
+    # exit (main) — frontera con código de funciones
     li   $v0, 10
     syscall
 

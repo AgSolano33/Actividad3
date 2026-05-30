@@ -1,0 +1,42 @@
+# Iteración 7 — casos borde:
+#   - función con 0 parámetros
+#   - función con 4 parámetros (máximo soportado)
+#   - función con var local + control de flujo + return en una rama del if
+#   - aislamiento: variable global "x" en main vs "x" como param y como
+#     local en una función — NO deben compartir memoria.
+#
+# Salida esperada (una por línea):
+#   hola         ← saludo() imprime "hola" antes de retornar 0
+#   0            ← print de lo que retornó saludo()
+#   10           ← suma4(1, 2, 3, 4)
+#   42           ← absoluto(±42)
+#   7            ← absoluto(7)
+#   0            ← resetX() retorna su "x" local (= 0)
+#   100          ← x global en main NO se modificó (sigue siendo 100)
+
+func saludo() {
+  print "hola"
+  return 0
+}
+
+func suma4(a, b, c, d) {
+  return a + b + c + d
+}
+
+func absoluto(n) {
+  if n < 0 then return ±n
+  return n
+}
+
+func resetX() {
+  x <-- 0
+  return x
+}
+
+x <-- 100
+print saludo()
+print suma4(1, 2, 3, 4)
+print absoluto(±42)
+print absoluto(7)
+print resetX()
+print x

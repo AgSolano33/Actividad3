@@ -20,11 +20,11 @@ main:
     syscall
     # INT 7 → $t0
     li   $t0, 7
-    # x <-- (consume $t0)
+    # x <-- (consume $t0)  → v_x
     sw   $t0, v_x
     # INT 3 → $t0
     li   $t0, 3
-    # y <-- (consume $t0)
+    # y <-- (consume $t0)  → v_y
     sw   $t0, v_y
     # ===== if #1 (linea 21) =====
     # ----- cond -----
@@ -98,11 +98,11 @@ if_end_1:
     syscall
     # INT 7 → $t0
     li   $t0, 7
-    # x <-- (consume $t0)
+    # x <-- (consume $t0)  → v_x
     sw   $t0, v_x
     # INT 0 → $t0
     li   $t0, 0
-    # y <-- (consume $t0)
+    # y <-- (consume $t0)  → v_y
     sw   $t0, v_y
     # ===== if #3 (linea 26) =====
     # ----- cond -----
@@ -178,11 +178,11 @@ if_end_3:
     li   $t0, 5
     # ± : $t0 := 0 - $t0
     sub  $t0, $zero, $t0
-    # x <-- (consume $t0)
+    # x <-- (consume $t0)  → v_x
     sw   $t0, v_x
     # INT 3 → $t0
     li   $t0, 3
-    # y <-- (consume $t0)
+    # y <-- (consume $t0)  → v_y
     sw   $t0, v_y
     # ===== if #5 (linea 31) =====
     # ----- cond -----
@@ -245,7 +245,7 @@ if_else_5:
 if_end_5:
     # ===== fin if #5 =====
 
-    # exit
+    # exit (main) — frontera con código de funciones
     li   $v0, 10
     syscall
 

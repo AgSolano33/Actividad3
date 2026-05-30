@@ -9,11 +9,11 @@ v_huerfana: .word 0
 main:
     # BASED [FF:16] (= 255) → $t0
     li   $t0, 255
-    # hex_var <-- (consume $t0)
+    # hex_var <-- (consume $t0)  → v_hex_var
     sw   $t0, v_hex_var
     # BASED [1010:2] (= 10) → $t0
     li   $t0, 10
-    # bin_var <-- (consume $t0)
+    # bin_var <-- (consume $t0)  → v_bin_var
     sw   $t0, v_bin_var
     # STRING "--- mezcla ---" → $t0
     la   $t0, str_0
@@ -66,7 +66,7 @@ main:
     li   $a0, 10
     syscall
 
-    # exit
+    # exit (main) — frontera con código de funciones
     li   $v0, 10
     syscall
 

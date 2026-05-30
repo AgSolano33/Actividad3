@@ -1,0 +1,24 @@
+# Iteración 7 — funciones básicas: 1 param, 2 params, misma función dos veces.
+# Salida esperada (en QtSPIM, una por línea):
+#   10           ← doble(5)
+#   7            ← suma(3, 4)
+#   14           ← doble(7) (misma función, distintos args)
+#   30           ← suma(10, 20)
+#   -2           ← resta(3, 5)
+func doble(x) {
+  return x + x
+}
+
+func suma(a, b) {
+  return a + b
+}
+
+func resta(a, b) {
+  return a - b
+}
+
+print doble(5)
+print suma(3, 4)
+print doble(7)
+print suma(10, 20)
+print resta(3, 5)

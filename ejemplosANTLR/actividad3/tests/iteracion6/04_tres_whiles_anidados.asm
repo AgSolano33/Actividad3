@@ -9,7 +9,7 @@ str_0: .asciiz "FIN"
 main:
     # INT 1 → $t0
     li   $t0, 1
-    # i <-- (consume $t0)
+    # i <-- (consume $t0)  → v_i
     sw   $t0, v_i
     # ===== while #1 (linea 16) =====
 loop_start_1:
@@ -20,11 +20,11 @@ loop_start_1:
     li   $t1, 3
     # <  : $t0 := ($t0 < $t1) ? 1 : 0
     slt  $t0, $t0, $t1
-    beq  $t0, $zero, loop_end_1    # cond falsa → salir del ciclo
+    beq  $t0, $zero, loop_end_1    # cond falsa → salir
     # ----- body -----
     # INT 1 → $t1
     li   $t1, 1
-    # j <-- (consume $t1)
+    # j <-- (consume $t1)  → v_j
     sw   $t1, v_j
     # ===== while #2 (linea 18) =====
 loop_start_2:
@@ -35,11 +35,11 @@ loop_start_2:
     li   $t2, 3
     # <  : $t1 := ($t1 < $t2) ? 1 : 0
     slt  $t1, $t1, $t2
-    beq  $t1, $zero, loop_end_2    # cond falsa → salir del ciclo
+    beq  $t1, $zero, loop_end_2    # cond falsa → salir
     # ----- body -----
     # INT 1 → $t2
     li   $t2, 1
-    # k <-- (consume $t2)
+    # k <-- (consume $t2)  → v_k
     sw   $t2, v_k
     # ===== while #3 (linea 20) =====
 loop_start_3:
@@ -50,7 +50,7 @@ loop_start_3:
     li   $t3, 3
     # <  : $t2 := ($t2 < $t3) ? 1 : 0
     slt  $t2, $t2, $t3
-    beq  $t2, $zero, loop_end_3    # cond falsa → salir del ciclo
+    beq  $t2, $zero, loop_end_3    # cond falsa → salir
     # ----- body -----
     # VAR i (v_i) → $t3
     lw   $t3, v_i
@@ -108,7 +108,7 @@ loop_start_3:
     li   $t4, 1
     # + : $t3 := $t3 + $t4
     add  $t3, $t3, $t4
-    # k <-- (consume $t3)
+    # k <-- (consume $t3)  → v_k
     sw   $t3, v_k
     j    loop_start_3                     # volver a evaluar cond
 loop_end_3:
@@ -119,7 +119,7 @@ loop_end_3:
     li   $t3, 1
     # + : $t2 := $t2 + $t3
     add  $t2, $t2, $t3
-    # j <-- (consume $t2)
+    # j <-- (consume $t2)  → v_j
     sw   $t2, v_j
     j    loop_start_2                     # volver a evaluar cond
 loop_end_2:
@@ -130,7 +130,7 @@ loop_end_2:
     li   $t2, 1
     # + : $t1 := $t1 + $t2
     add  $t1, $t1, $t2
-    # i <-- (consume $t1)
+    # i <-- (consume $t1)  → v_i
     sw   $t1, v_i
     j    loop_start_1                     # volver a evaluar cond
 loop_end_1:
@@ -146,7 +146,7 @@ loop_end_1:
     li   $a0, 10
     syscall
 
-    # exit
+    # exit (main) — frontera con código de funciones
     li   $v0, 10
     syscall
 

@@ -8,11 +8,11 @@ v_total: .word 0
 main:
     # INT 5 → $t0
     li   $t0, 5
-    # a <-- (consume $t0)
+    # a <-- (consume $t0)  → v_a
     sw   $t0, v_a
     # INT 4 → $t0
     li   $t0, 4
-    # b <-- (consume $t0)
+    # b <-- (consume $t0)  → v_b
     sw   $t0, v_b
     # VAR a (v_a) → $t0
     lw   $t0, v_a
@@ -75,7 +75,7 @@ main:
     # × : $t0 := $t0 × $t1
     mult $t0, $t1
     mflo $t0
-    # total <-- (consume $t0)
+    # total <-- (consume $t0)  → v_total
     sw   $t0, v_total
     # VAR total (v_total) → $t0
     lw   $t0, v_total
@@ -92,7 +92,7 @@ main:
     li   $a0, 10
     syscall
 
-    # exit
+    # exit (main) — frontera con código de funciones
     li   $v0, 10
     syscall
 

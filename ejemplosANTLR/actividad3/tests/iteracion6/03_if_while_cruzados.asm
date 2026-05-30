@@ -8,7 +8,7 @@ str_0: .asciiz "--- y negativo, if no entra ---"
 main:
     # INT 0 → $t0
     li   $t0, 0
-    # x <-- (consume $t0)
+    # x <-- (consume $t0)  → v_x
     sw   $t0, v_x
     # ===== while #1 (linea 19) =====
 loop_start_1:
@@ -19,7 +19,7 @@ loop_start_1:
     li   $t1, 6
     # <  : $t0 := ($t0 < $t1) ? 1 : 0
     slt  $t0, $t0, $t1
-    beq  $t0, $zero, loop_end_1    # cond falsa → salir del ciclo
+    beq  $t0, $zero, loop_end_1    # cond falsa → salir
     # ----- body -----
     # ===== if #1 (linea 20) =====
     # ----- cond -----
@@ -54,14 +54,14 @@ if_end_1:
     li   $t2, 1
     # + : $t1 := $t1 + $t2
     add  $t1, $t1, $t2
-    # x <-- (consume $t1)
+    # x <-- (consume $t1)  → v_x
     sw   $t1, v_x
     j    loop_start_1                     # volver a evaluar cond
 loop_end_1:
     # ===== fin while #1 =====
     # INT 3 → $t0
     li   $t0, 3
-    # y <-- (consume $t0)
+    # y <-- (consume $t0)  → v_y
     sw   $t0, v_y
     # ===== if #2 (linea 24) =====
     # ----- cond -----
@@ -82,7 +82,7 @@ loop_start_2:
     li   $t2, 0
     # >  : $t1 := ($t1 > $t2) ? 1 : 0   (slt operandos invertidos)
     slt  $t1, $t2, $t1
-    beq  $t1, $zero, loop_end_2    # cond falsa → salir del ciclo
+    beq  $t1, $zero, loop_end_2    # cond falsa → salir
     # ----- body -----
     # VAR y (v_y) → $t2
     lw   $t2, v_y
@@ -100,7 +100,7 @@ loop_start_2:
     li   $t3, 1
     # - : $t2 := $t2 - $t3
     sub  $t2, $t2, $t3
-    # y <-- (consume $t2)
+    # y <-- (consume $t2)  → v_y
     sw   $t2, v_y
     j    loop_start_2                     # volver a evaluar cond
 loop_end_2:
@@ -121,7 +121,7 @@ if_end_2:
     li   $t0, 2
     # ± : $t0 := 0 - $t0
     sub  $t0, $zero, $t0
-    # y <-- (consume $t0)
+    # y <-- (consume $t0)  → v_y
     sw   $t0, v_y
     # ===== if #3 (linea 30) =====
     # ----- cond -----
@@ -142,7 +142,7 @@ loop_start_3:
     li   $t2, 0
     # >  : $t1 := ($t1 > $t2) ? 1 : 0   (slt operandos invertidos)
     slt  $t1, $t2, $t1
-    beq  $t1, $zero, loop_end_3    # cond falsa → salir del ciclo
+    beq  $t1, $zero, loop_end_3    # cond falsa → salir
     # ----- body -----
     # INT 999 → $t2
     li   $t2, 999
@@ -160,7 +160,7 @@ loop_start_3:
     li   $t3, 1
     # - : $t2 := $t2 - $t3
     sub  $t2, $t2, $t3
-    # y <-- (consume $t2)
+    # y <-- (consume $t2)  → v_y
     sw   $t2, v_y
     j    loop_start_3                     # volver a evaluar cond
 loop_end_3:
@@ -168,7 +168,7 @@ loop_end_3:
 if_end_3:
     # ===== fin if #3 =====
 
-    # exit
+    # exit (main) — frontera con código de funciones
     li   $v0, 10
     syscall
 

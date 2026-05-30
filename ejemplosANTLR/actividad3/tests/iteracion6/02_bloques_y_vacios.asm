@@ -8,7 +8,7 @@ str_1: .asciiz "else ejecuta"
 main:
     # INT 10 → $t0
     li   $t0, 10
-    # x <-- (consume $t0)
+    # x <-- (consume $t0)  → v_x
     sw   $t0, v_x
     # VAR x (v_x) → $t0
     lw   $t0, v_x
@@ -58,7 +58,7 @@ loop_start_1:
     li   $t1, 1000
     # >  : $t0 := ($t0 > $t1) ? 1 : 0   (slt operandos invertidos)
     slt  $t0, $t1, $t0
-    beq  $t0, $zero, loop_end_1    # cond falsa → salir del ciclo
+    beq  $t0, $zero, loop_end_1    # cond falsa → salir
     # ----- body -----
     j    loop_start_1                     # volver a evaluar cond
 loop_end_1:
@@ -99,7 +99,7 @@ if_else_1:
 if_end_1:
     # ===== fin if #1 =====
 
-    # exit
+    # exit (main) — frontera con código de funciones
     li   $v0, 10
     syscall
 

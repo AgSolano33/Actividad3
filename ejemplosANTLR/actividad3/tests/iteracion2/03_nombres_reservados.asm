@@ -8,15 +8,15 @@ v_div: .word 0
 main:
     # INT 7 → $t0
     li   $t0, 7
-    # add <-- (consume $t0)
+    # add <-- (consume $t0)  → v_add
     sw   $t0, v_add
     # INT 42 → $t0
     li   $t0, 42
-    # sub <-- (consume $t0)
+    # sub <-- (consume $t0)  → v_sub
     sw   $t0, v_sub
     # INT 100 → $t0
     li   $t0, 100
-    # div <-- (consume $t0)
+    # div <-- (consume $t0)  → v_div
     sw   $t0, v_div
     # VAR add (v_add) → $t0
     lw   $t0, v_add
@@ -49,7 +49,7 @@ main:
     li   $a0, 10
     syscall
 
-    # exit
+    # exit (main) — frontera con código de funciones
     li   $v0, 10
     syscall
 

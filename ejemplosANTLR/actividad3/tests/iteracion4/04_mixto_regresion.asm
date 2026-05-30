@@ -15,11 +15,11 @@ str_7: .asciiz "FIN"
 main:
     # INT 9 → $t0
     li   $t0, 9
-    # a <-- (consume $t0)
+    # a <-- (consume $t0)  → v_a
     sw   $t0, v_a
     # INT 5 → $t0
     li   $t0, 5
-    # b <-- (consume $t0)
+    # b <-- (consume $t0)  → v_b
     sw   $t0, v_b
     # STRING "--- mezcla ---" → $t0
     la   $t0, str_0
@@ -196,7 +196,7 @@ main:
     li   $a0, 10
     syscall
 
-    # exit
+    # exit (main) — frontera con código de funciones
     li   $v0, 10
     syscall
 

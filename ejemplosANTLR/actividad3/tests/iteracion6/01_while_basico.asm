@@ -7,7 +7,7 @@ str_0: .asciiz "fin"
 main:
     # INT 1 → $t0
     li   $t0, 1
-    # x <-- (consume $t0)
+    # x <-- (consume $t0)  → v_x
     sw   $t0, v_x
     # ===== while #1 (linea 11) =====
 loop_start_1:
@@ -18,7 +18,7 @@ loop_start_1:
     li   $t1, 4
     # <  : $t0 := ($t0 < $t1) ? 1 : 0
     slt  $t0, $t0, $t1
-    beq  $t0, $zero, loop_end_1    # cond falsa → salir del ciclo
+    beq  $t0, $zero, loop_end_1    # cond falsa → salir
     # ----- body -----
     # VAR x (v_x) → $t1
     lw   $t1, v_x
@@ -36,7 +36,7 @@ loop_start_1:
     li   $t2, 1
     # + : $t1 := $t1 + $t2
     add  $t1, $t1, $t2
-    # x <-- (consume $t1)
+    # x <-- (consume $t1)  → v_x
     sw   $t1, v_x
     j    loop_start_1                     # volver a evaluar cond
 loop_end_1:
@@ -60,7 +60,7 @@ loop_start_2:
     li   $t1, 1000
     # >  : $t0 := ($t0 > $t1) ? 1 : 0   (slt operandos invertidos)
     slt  $t0, $t1, $t0
-    beq  $t0, $zero, loop_end_2    # cond falsa → salir del ciclo
+    beq  $t0, $zero, loop_end_2    # cond falsa → salir
     # ----- body -----
     # INT 999 → $t1
     li   $t1, 999
@@ -76,7 +76,7 @@ loop_start_2:
 loop_end_2:
     # ===== fin while #2 =====
 
-    # exit
+    # exit (main) — frontera con código de funciones
     li   $v0, 10
     syscall
 

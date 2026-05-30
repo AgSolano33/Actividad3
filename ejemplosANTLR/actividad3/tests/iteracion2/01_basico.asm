@@ -7,11 +7,11 @@ v_y: .word 0
 main:
     # INT 10 → $t0
     li   $t0, 10
-    # x <-- (consume $t0)
+    # x <-- (consume $t0)  → v_x
     sw   $t0, v_x
     # INT 3 → $t0
     li   $t0, 3
-    # y <-- (consume $t0)
+    # y <-- (consume $t0)  → v_y
     sw   $t0, v_y
     # VAR x (v_x) → $t0
     lw   $t0, v_x
@@ -34,7 +34,7 @@ main:
     li   $a0, 10
     syscall
 
-    # exit
+    # exit (main) — frontera con código de funciones
     li   $v0, 10
     syscall
 

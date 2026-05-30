@@ -1,17 +1,29 @@
 grammar RaraLang;
 
-// RaraLang — Iteración 6: bloques { ... } y while.
-// El block agrupa sentencias sin generar código propio.
-// El while comparte la técnica de buffers del if, con saltos hacia atrás.
+// RaraLang — Iteración 7: funciones (declaración, call, return).
+//   - Funciones SOLO a nivel superior (no anidadas).
+//   - El nivel superior intercala funcDecl y stmt; main solo recibe stmts.
+//   - return solo es válido dentro de una función (chequeo semántico).
 
-prog : stmt* EOF ;
+prog : topDecl* EOF ;
+
+topDecl
+    : funcDecl
+    | stmt
+    ;
+
+funcDecl  : FUNC ID LPAREN paramList? RPAREN block ;
+paramList : ID (COMMA ID)* ;
+
+block : LBRACE stmt* RBRACE ;
 
 stmt
     : PRINT expr                        #printStmt
     | ID ASSIGN expr                    #assignStmt
     | IF expr THEN stmt (ELSE stmt)?    #ifStmt
     | WHILE expr DO stmt                #whileStmt
-    | LBRACE stmt* RBRACE               #blockStmt
+    | RETURN expr                       #returnStmt
+    | block                             #blockStmt
     ;
 
 expr
@@ -21,21 +33,26 @@ expr
     | expr op=(ADD|SUB) expr                #addSub
     | expr op=(EQ|NEQ|LT|GT) expr           #compare
     | LPAREN expr RPAREN                    #parens
+    | ID LPAREN argList? RPAREN             #call   // antes de #var: lookahead `(`
     | INT                                   #int
     | BASED_NUMBER                          #based
     | STRING                                #string
     | ID                                    #var
     ;
 
-// ─── Keywords ─────────────────────────────────────────────────────────────────
-// Importante: TODAS las keywords antes que ID.
+argList : expr (COMMA expr)* ;
 
-PRINT : 'print' ;
-IF    : 'if' ;
-THEN  : 'then' ;
-ELSE  : 'else' ;
-WHILE : 'while' ;
-DO    : 'do' ;
+// ─── Keywords ─────────────────────────────────────────────────────────────────
+// Todas las keywords antes que ID.
+
+PRINT  : 'print' ;
+IF     : 'if' ;
+THEN   : 'then' ;
+ELSE   : 'else' ;
+WHILE  : 'while' ;
+DO     : 'do' ;
+FUNC   : 'func' ;
+RETURN : 'return' ;
 
 // ─── Operadores ───────────────────────────────────────────────────────────────
 
@@ -56,6 +73,7 @@ LPAREN     : '(' ;
 RPAREN     : ')' ;
 LBRACE     : '{' ;
 RBRACE     : '}' ;
+COMMA      : ',' ;
 
 // ─── Literales ────────────────────────────────────────────────────────────────
 

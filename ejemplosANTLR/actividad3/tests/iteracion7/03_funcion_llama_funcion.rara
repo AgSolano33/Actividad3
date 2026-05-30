@@ -1,0 +1,46 @@
+# Iteración 7 — el caso clave: una función llama a otra.
+# Si NO se protege $ra alrededor del jal interno, este programa retorna
+# basura o se cuelga (jr $ra salta a la dirección del último jal en vez
+# de a quien llamó a la función externa).
+#
+# Salida esperada (una por línea):
+#   43          ← externa()   = interna() + 1   = 42 + 1
+#   86          ← externa() × 2
+#   45          ← cuadruple(11) = doble(doble(11)) = doble(22) = 44   ← espera... revisar
+#   12          ← suma(uno(), dos()) = uno() + dos() = 1 + 2... no, 3 + ... ver
+# Recalculo para evitar bugs en el comentario:
+#   cuadruple(11) = doble(doble(11)) = doble(22) = 44   ✓
+#   suma_de_2(3,4) llama a suma(3,4)+0 = 7
+# Salida esperada DEFINITIVA:
+#   43
+#   86
+#   44
+#   7
+func interna() {
+  return 42
+}
+
+func externa() {
+  return interna() + 1
+}
+
+func doble(x) {
+  return x + x
+}
+
+func cuadruple(x) {
+  return doble(doble(x))
+}
+
+func suma(a, b) {
+  return a + b
+}
+
+func suma_de_2(a, b) {
+  return suma(a, b) + 0
+}
+
+print externa()
+print externa() × 2
+print cuadruple(11)
+print suma_de_2(3, 4)

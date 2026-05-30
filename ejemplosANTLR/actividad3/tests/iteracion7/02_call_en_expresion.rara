@@ -1,0 +1,30 @@
+# Iteración 7 — calls dentro de expresiones aritméticas, asignaciones, if.
+# Esto valida que:
+#   - el resultado de un call vive en un t-reg igual que cualquier otra expr;
+#   - los t-regs vivos del caller se spillean al stack alrededor del jal
+#     (ej: en `x + f(y)`, el reg con x debe sobrevivir al jal).
+# Salida esperada (una por línea):
+#   7             ← doble(3) + 1
+#   24            ← 2 × triple(4)
+#   16            ← doble(5) + triple(2)
+#   16            ← y <-- doble(8); print y
+#   1             ← if doble(3) > 5 then 1 else 0
+#   12            ← doble(2) + doble(4)   (dos calls en la misma expr)
+func doble(x) {
+  return x + x
+}
+
+func triple(x) {
+  return 3 × x
+}
+
+print doble(3) + 1
+print 2 × triple(4)
+print doble(5) + triple(2)
+
+y <-- doble(8)
+print y
+
+if doble(3) > 5 then print 1 else print 0
+
+print doble(2) + doble(4)

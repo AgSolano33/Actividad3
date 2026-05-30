@@ -4,7 +4,7 @@ tema: Declaración y llamada a funciones
 tiempo_estimado: 45 min
 ---
 
-# Iteración 6 — Funciones
+# Iteración 7 — Funciones
 
 ## Meta
 

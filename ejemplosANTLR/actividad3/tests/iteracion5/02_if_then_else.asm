@@ -6,7 +6,7 @@ v_x: .word 0
 main:
     # INT 7 → $t0
     li   $t0, 7
-    # x <-- (consume $t0)
+    # x <-- (consume $t0)  → v_x
     sw   $t0, v_x
     # ===== if #1 (linea 14) =====
     # ----- cond -----
@@ -124,7 +124,7 @@ if_end_4:
     # ===== fin if #4 =====
     # INT 42 → $t0
     li   $t0, 42
-    # x <-- (consume $t0)
+    # x <-- (consume $t0)  → v_x
     sw   $t0, v_x
     # ===== if #5 (linea 19) =====
     # ----- cond -----
@@ -149,7 +149,7 @@ if_end_4:
 if_end_5:
     # ===== fin if #5 =====
 
-    # exit
+    # exit (main) — frontera con código de funciones
     li   $v0, 10
     syscall
 

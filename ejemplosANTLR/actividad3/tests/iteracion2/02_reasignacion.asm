@@ -5,11 +5,11 @@ v_copia: .word 0
     .text
     .globl main
 main:
-    # expr INT 1
+    # INT 1 → $t0
     li   $t0, 1
-    # assign contador <-- (consume $t0)
+    # contador <-- (consume $t0)
     sw   $t0, v_contador
-    # expr VAR contador  (label v_contador)
+    # VAR contador (v_contador) → $t0
     lw   $t0, v_contador
     # print int (consume $t0)
     move $a0, $t0
@@ -19,11 +19,11 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr INT 2
+    # INT 2 → $t0
     li   $t0, 2
-    # assign contador <-- (consume $t0)
+    # contador <-- (consume $t0)
     sw   $t0, v_contador
-    # expr VAR contador  (label v_contador)
+    # VAR contador (v_contador) → $t0
     lw   $t0, v_contador
     # print int (consume $t0)
     move $a0, $t0
@@ -33,15 +33,15 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr VAR contador  (label v_contador)
+    # VAR contador (v_contador) → $t0
     lw   $t0, v_contador
-    # assign copia <-- (consume $t0)
+    # copia <-- (consume $t0)
     sw   $t0, v_copia
-    # expr INT 99
+    # INT 99 → $t0
     li   $t0, 99
-    # assign contador <-- (consume $t0)
+    # contador <-- (consume $t0)
     sw   $t0, v_contador
-    # expr VAR copia  (label v_copia)
+    # VAR copia (v_copia) → $t0
     lw   $t0, v_copia
     # print int (consume $t0)
     move $a0, $t0

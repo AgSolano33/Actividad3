@@ -3,7 +3,7 @@
     .text
     .globl main
 main:
-    # expr INT 255
+    # INT 255 → $t0
     li   $t0, 255
     # print int (consume $t0)
     move $a0, $t0
@@ -13,7 +13,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr BASED [FF:16]  (= 255)
+    # BASED [FF:16] (= 255) → $t0
     li   $t0, 255
     # print int (consume $t0)
     move $a0, $t0
@@ -23,7 +23,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr BASED [377:8]  (= 255)
+    # BASED [377:8] (= 255) → $t0
     li   $t0, 255
     # print int (consume $t0)
     move $a0, $t0
@@ -33,7 +33,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr BASED [11111111:2]  (= 255)
+    # BASED [11111111:2] (= 255) → $t0
     li   $t0, 255
     # print int (consume $t0)
     move $a0, $t0
@@ -43,7 +43,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr BASED [1010:2]  (= 10)
+    # BASED [1010:2] (= 10) → $t0
     li   $t0, 10
     # print int (consume $t0)
     move $a0, $t0
@@ -53,7 +53,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr BASED [10:16]  (= 16)
+    # BASED [10:16] (= 16) → $t0
     li   $t0, 16
     # print int (consume $t0)
     move $a0, $t0

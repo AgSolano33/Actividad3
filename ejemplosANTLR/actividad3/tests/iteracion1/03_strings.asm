@@ -7,7 +7,7 @@ str_3: .asciiz "123 no es un entero aqui"
     .text
     .globl main
 main:
-    # expr STRING "hola mundo"
+    # STRING "hola mundo" → $t0
     la   $t0, str_0
     # print string (consume $t0)
     move $a0, $t0
@@ -17,7 +17,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr STRING "RaraLang funciona!"
+    # STRING "RaraLang funciona!" → $t0
     la   $t0, str_1
     # print string (consume $t0)
     move $a0, $t0
@@ -27,7 +27,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr STRING ""
+    # STRING "" → $t0
     la   $t0, str_2
     # print string (consume $t0)
     move $a0, $t0
@@ -37,7 +37,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr STRING "123 no es un entero aqui"
+    # STRING "123 no es un entero aqui" → $t0
     la   $t0, str_3
     # print string (consume $t0)
     move $a0, $t0

@@ -1,0 +1,13 @@
+# Iteración 3 — Las cuatro operaciones por separado
+# Cada operación con valores conocidos. Calcular a mano y comparar.
+# Salida esperada en QtSPIM:
+#   13      # 10 + 3
+#   7       # 10 - 3
+#   30      # 10 × 3
+#   3       # 10 ÷ 3  (cociente; residuo 1 se pierde)
+x <-- 10
+y <-- 3
+print x + y
+print x - y
+print x × y
+print x ÷ y

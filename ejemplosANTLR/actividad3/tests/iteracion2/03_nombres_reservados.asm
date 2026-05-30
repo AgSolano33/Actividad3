@@ -6,19 +6,19 @@ v_div: .word 0
     .text
     .globl main
 main:
-    # expr INT 7
+    # INT 7 → $t0
     li   $t0, 7
-    # assign add <-- (consume $t0)
+    # add <-- (consume $t0)
     sw   $t0, v_add
-    # expr INT 42
+    # INT 42 → $t0
     li   $t0, 42
-    # assign sub <-- (consume $t0)
+    # sub <-- (consume $t0)
     sw   $t0, v_sub
-    # expr INT 100
+    # INT 100 → $t0
     li   $t0, 100
-    # assign div <-- (consume $t0)
+    # div <-- (consume $t0)
     sw   $t0, v_div
-    # expr VAR add  (label v_add)
+    # VAR add (v_add) → $t0
     lw   $t0, v_add
     # print int (consume $t0)
     move $a0, $t0
@@ -28,7 +28,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr VAR sub  (label v_sub)
+    # VAR sub (v_sub) → $t0
     lw   $t0, v_sub
     # print int (consume $t0)
     move $a0, $t0
@@ -38,7 +38,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr VAR div  (label v_div)
+    # VAR div (v_div) → $t0
     lw   $t0, v_div
     # print int (consume $t0)
     move $a0, $t0

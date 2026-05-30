@@ -3,7 +3,7 @@
     .text
     .globl main
 main:
-    # expr INT 5
+    # INT 5 → $t0
     li   $t0, 5
     # print int (consume $t0)
     move $a0, $t0
@@ -13,7 +13,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr INT 0
+    # INT 0 → $t0
     li   $t0, 0
     # print int (consume $t0)
     move $a0, $t0
@@ -23,7 +23,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr INT 1000
+    # INT 1000 → $t0
     li   $t0, 1000
     # print int (consume $t0)
     move $a0, $t0
@@ -33,7 +33,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr INT 42
+    # INT 42 → $t0
     li   $t0, 42
     # print int (consume $t0)
     move $a0, $t0

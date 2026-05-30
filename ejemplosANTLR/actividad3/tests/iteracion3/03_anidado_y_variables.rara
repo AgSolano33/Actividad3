@@ -1,0 +1,17 @@
+# Iteración 3 — Expresiones anidadas con paréntesis y variables
+# (a + 2) × (b - 1)  con a=5, b=4  →  (5+2) × (4-1) = 7 × 3 = 21
+# Una anidación derecha-asociativa moderada para estresar el pool de
+# registros (sin reventarlo): a + (b + (a × b)) = 5 + (4 + 20) = 29
+# Reasignar resultado a una variable y volver a operar sobre ella:
+#   total <-- (a + 2) × (b - 1)
+#   print total + 1   # 22
+# Salida esperada:
+#   21
+#   29
+#   22
+a <-- 5
+b <-- 4
+print (a + 2) × (b - 1)
+print a + (b + (a × b))
+total <-- (a + 2) × (b - 1)
+print total + 1

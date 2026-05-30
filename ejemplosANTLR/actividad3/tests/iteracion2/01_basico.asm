@@ -5,15 +5,15 @@ v_y: .word 0
     .text
     .globl main
 main:
-    # expr INT 10
+    # INT 10 → $t0
     li   $t0, 10
-    # assign x <-- (consume $t0)
+    # x <-- (consume $t0)
     sw   $t0, v_x
-    # expr INT 3
+    # INT 3 → $t0
     li   $t0, 3
-    # assign y <-- (consume $t0)
+    # y <-- (consume $t0)
     sw   $t0, v_y
-    # expr VAR x  (label v_x)
+    # VAR x (v_x) → $t0
     lw   $t0, v_x
     # print int (consume $t0)
     move $a0, $t0
@@ -23,7 +23,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    # expr VAR y  (label v_y)
+    # VAR y (v_y) → $t0
     lw   $t0, v_y
     # print int (consume $t0)
     move $a0, $t0

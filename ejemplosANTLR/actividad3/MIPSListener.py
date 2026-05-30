@@ -1,37 +1,81 @@
 """
 MIPSListener — Compilador RaraLang → MIPS (QtSPIM)
 
-Iteración 2: literales enteros, números en bases no convencionales,
-strings, sentencia `print`, variables enteras y asignación con `<--`.
+Iteración 3: aritmética binaria (+, -, ×, ÷) con paréntesis, sobre la
+base de iteración 1 (literales/print/strings/bases) e iteración 2
+(variables enteras + asignación).
 
-Arquitectura (estricta):
-  - SOLO patrón Listener. No hay Visitor, no hay return values en métodos,
-    no hay intérprete. El walker recorre el árbol y dispara `exitX` en
-    post-order; las sentencias emiten MIPS al cerrar.
-  - Convención de evaluación de expresiones:
-        Cada alternativa de `expr` deja su valor en $t0.
-        - INT, BASED, VAR   → $t0 contiene un int
-        - STRING            → $t0 contiene la dirección de un .asciiz
-    El kind (int|string) se anota en el ctx para que la sentencia padre
-    (`print` o `<--`) decida qué hacer.
-  - Tabla de símbolos: dict { nombre_rara → etiqueta_MIPS }.
-    La etiqueta se prefija con `v_` para *evitar colisiones con nombres
-    reservados del ensamblador* (`add`, `sub`, `div`, etc.). Eso resuelve
-    de raíz la "trampa" del enunciado.
-  - Las variables se reservan en `.data` con `.word 0` la PRIMERA vez que
-    el compilador las ve (lectura o escritura). No hay declaración explícita.
+Arquitectura (sigue siendo estricta):
+  - SOLO patrón Listener. No hay Visitor. No hay intérprete. No se
+    evalúan expresiones del programa en Python (la única excepción es
+    el folding compile-time de `BASED_NUMBER` — convertir el texto del
+    literal a un entero — que NO es interpretar al programa).
+  - Generación de código en post-order: el walker visita hijos antes
+    que padres, así cuando una alternativa de operador binario corre su
+    `exit*`, las dos sub-expresiones YA dejaron su resultado en sendos
+    registros temporales.
 
-Decisiones documentadas explícitamente para que puedas auditarlas:
-  1. La asignación de un STRING a una variable se rechaza en tiempo de
-     compilación con un error de tipo claro — las variables de iter 2
-     son enteras por contrato.
-  2. Leer una variable nunca asignada NO es un error: vale 0 porque
-     `.word 0` la inicializa. (Trade-off discutible — ver §auditoría).
-  3. Reasignar una variable solo emite un `sw`; no realloca memoria.
+Modelo de evaluación de expresiones:
+  Cada alternativa de `expr` deja:
+      ctx.reg  → nombre de un registro $tN que contiene su valor (o,
+                 para STRING, la dirección del .asciiz)
+      ctx.kind → "int" | "string"
+  Los operadores binarios (mulDiv, addSub) toman ctx.expr(0).reg y
+  ctx.expr(1).reg, emiten la operación MIPS, LIBERAN el registro
+  derecho y reusan el izquierdo como destino. Esto da una "pila de
+  registros" estática (la del compilador), no una pila en memoria de
+  ejecución — más rápido y más legible en el .asm.
+
+Precedencia:
+  Se resuelve por la GRAMÁTICA, no por el listener. ANTLR4 con
+  recursión izquierda en una sola regla usa el orden textual de las
+  alternativas para dar prioridad: `mulDiv` está antes que `addSub`,
+  por lo tanto `×` y `÷` ligan más fuerte que `+` y `-`. El árbol
+  sintáctico que llega al listener YA tiene `2 + 3 × 4` agrupado como
+  `2 + (3 × 4)`. El listener no necesita lógica de precedencia.
+
+Decisiones documentadas (para auditar):
+  1. División por cero NO se detecta en compile-time. SPIM la marca
+     en runtime con un trap. Defendible: detectarlo solo cubriría el
+     literal `÷ 0`; el caso `x ÷ y` con y=0 requiere análisis de flujo
+     que no toca a iter 3.
+  2. El RESIDUO de `÷` se pierde — usamos `mflo` (cociente) y nunca
+     leemos HI. RaraLang no tiene operador de módulo en iter 3.
+  3. OVERFLOW en `×` es silencioso — `mflo` toma solo los 32 bits
+     bajos. La parte alta (`mfhi`) se ignora.
+  4. Profundidad máxima de expresión: 10 registros temporales
+     ($t0..$t9). Una expresión derecha-asociativa muy anidada agotaría
+     el pool. Se reporta como error de compilación claro.
+  5. La aritmética sobre strings es ERROR de tipo en compile-time
+     (no concatenación). Misma postura que iter 2.
 """
 
 from antlr.generated.RaraLangListener import RaraLangListener
 from antlr.generated.RaraLangParser import RaraLangParser
+
+
+class _RegisterPool:
+    """Pool LIFO de registros temporales $t0..$t9.
+
+    `allocate()` saca el de menor número libre; `release()` lo devuelve
+    al frente, por lo que la siguiente `allocate()` lo reusa de inmediato.
+    Esto es la "pila de registros" mencionada en la guía de iter 3.
+    """
+
+    def __init__(self) -> None:
+        self._free: list[str] = [f"$t{i}" for i in range(10)]
+
+    def allocate(self) -> str:
+        if not self._free:
+            raise RuntimeError(
+                "Sin registros temporales: la expresión es demasiado "
+                "profunda (>10 valores vivos simultáneamente). "
+                "Considera asignar subexpresiones a variables."
+            )
+        return self._free.pop(0)
+
+    def release(self, reg: str) -> None:
+        self._free.insert(0, reg)
 
 
 class MIPSListener(RaraLangListener):
@@ -41,8 +85,9 @@ class MIPSListener(RaraLangListener):
         self._text: list[str] = []
         self._str_counter: int = 0
         self._symbols: dict[str, str] = {}
+        self._regs = _RegisterPool()
 
-    # ─── Helpers de emisión ────────────────────────────────────────────────
+    # ─── Helpers de emisión y tabla de símbolos ────────────────────────────
 
     def _emit(self, line: str) -> None:
         self._text.append(line)
@@ -53,10 +98,8 @@ class MIPSListener(RaraLangListener):
         return label
 
     def _intern_var(self, name: str) -> str:
-        """Devuelve la etiqueta MIPS para `name`, reservando .word 0 si
-        es la primera vez que se ve."""
         if name not in self._symbols:
-            label = f"v_{name}"  # prefijo anti-colisión con instrucciones
+            label = f"v_{name}"
             self._symbols[name] = label
             self._data.append(f"{label}: .word 0")
         return self._symbols[name]
@@ -67,13 +110,23 @@ class MIPSListener(RaraLangListener):
         self._emit("    li   $a0, 10")
         self._emit("    syscall")
 
-    # ─── expr → deja el resultado en $t0 + anota ctx.kind ──────────────────
+    def _require_int(self, ctx, where: str) -> None:
+        if ctx.kind != "int":
+            line = ctx.start.line
+            raise TypeError(
+                f"Línea {line}: operación aritmética '{where}' requiere "
+                f"enteros, no {ctx.kind!r}."
+            )
+
+    # ─── expr: hojas — cada una deja su resultado en un registro nuevo ─────
 
     def exitInt(self, ctx: RaraLangParser.IntContext):
         text = ctx.INT().getText()
         value = int(text)
-        self._emit(f"    # expr INT {text}")
-        self._emit(f"    li   $t0, {value}")
+        reg = self._regs.allocate()
+        self._emit(f"    # INT {text} → {reg}")
+        self._emit(f"    li   {reg}, {value}")
+        ctx.reg = reg
         ctx.kind = "int"
 
     def exitBased(self, ctx: RaraLangParser.BasedContext):
@@ -90,8 +143,10 @@ class MIPSListener(RaraLangListener):
                 f"Línea {line}:{col}: literal con base inválido {token!r} — "
                 f"'{digits}' no es representable en base {base_str} ({e})"
             ) from e
-        self._emit(f"    # expr BASED {token}  (= {value})")
-        self._emit(f"    li   $t0, {value}")
+        reg = self._regs.allocate()
+        self._emit(f"    # BASED {token} (= {value}) → {reg}")
+        self._emit(f"    li   {reg}, {value}")
+        ctx.reg = reg
         ctx.kind = "int"
 
     def exitString(self, ctx: RaraLangParser.StringContext):
@@ -99,47 +154,95 @@ class MIPSListener(RaraLangListener):
         text = raw[1:-1]
         label = self._new_str_label()
         self._data.append(f'{label}: .asciiz "{text}"')
-        self._emit(f"    # expr STRING {raw}")
-        self._emit(f"    la   $t0, {label}")
+        reg = self._regs.allocate()
+        self._emit(f"    # STRING {raw} → {reg}")
+        self._emit(f"    la   {reg}, {label}")
+        ctx.reg = reg
         ctx.kind = "string"
 
     def exitVar(self, ctx: RaraLangParser.VarContext):
         name = ctx.ID().getText()
         label = self._intern_var(name)
-        self._emit(f"    # expr VAR {name}  (label {label})")
-        self._emit(f"    lw   $t0, {label}")
+        reg = self._regs.allocate()
+        self._emit(f"    # VAR {name} ({label}) → {reg}")
+        self._emit(f"    lw   {reg}, {label}")
+        ctx.reg = reg
+        ctx.kind = "int"
+
+    # ─── expr: paréntesis — solo propagación ───────────────────────────────
+
+    def exitParens(self, ctx: RaraLangParser.ParensContext):
+        inner = ctx.expr()
+        ctx.reg = inner.reg
+        ctx.kind = inner.kind
+
+    # ─── expr: operadores binarios ─────────────────────────────────────────
+
+    def exitAddSub(self, ctx: RaraLangParser.AddSubContext):
+        left, right = ctx.expr(0), ctx.expr(1)
+        op = ctx.op.text
+        self._require_int(left, op)
+        self._require_int(right, op)
+        rl, rr = left.reg, right.reg
+        mnemonic = "add " if op == "+" else "sub "
+        self._emit(f"    # {op} : {rl} := {rl} {op} {rr}")
+        self._emit(f"    {mnemonic} {rl}, {rl}, {rr}")
+        self._regs.release(rr)
+        ctx.reg = rl
+        ctx.kind = "int"
+
+    def exitMulDiv(self, ctx: RaraLangParser.MulDivContext):
+        left, right = ctx.expr(0), ctx.expr(1)
+        op = ctx.op.text
+        self._require_int(left, op)
+        self._require_int(right, op)
+        rl, rr = left.reg, right.reg
+        if op == "\u00D7":   # ×
+            self._emit(f"    # × : {rl} := {rl} × {rr}  (mult, residuo n/a)")
+            self._emit(f"    mult {rl}, {rr}")
+            self._emit(f"    mflo {rl}")
+        else:                 # ÷
+            self._emit(f"    # ÷ : {rl} := {rl} ÷ {rr}  (mflo = cociente; HI = residuo, descartado)")
+            self._emit(f"    div  {rl}, {rr}")
+            self._emit(f"    mflo {rl}")
+        self._regs.release(rr)
+        ctx.reg = rl
         ctx.kind = "int"
 
     # ─── Sentencias ────────────────────────────────────────────────────────
 
     def exitPrintStmt(self, ctx: RaraLangParser.PrintStmtContext):
-        kind = ctx.expr().kind
-        if kind == "int":
-            self._emit("    # print int (consume $t0)")
-            self._emit("    move $a0, $t0")
+        expr = ctx.expr()
+        reg = expr.reg
+        if expr.kind == "int":
+            self._emit(f"    # print int (consume {reg})")
+            self._emit(f"    move $a0, {reg}")
             self._emit("    li   $v0, 1")
             self._emit("    syscall")
-        elif kind == "string":
-            self._emit("    # print string (consume $t0)")
-            self._emit("    move $a0, $t0")
+        elif expr.kind == "string":
+            self._emit(f"    # print string (consume {reg})")
+            self._emit(f"    move $a0, {reg}")
             self._emit("    li   $v0, 4")
             self._emit("    syscall")
         else:
-            raise ValueError(f"Tipo desconocido en print: {kind!r}")
+            raise ValueError(f"Tipo desconocido en print: {expr.kind!r}")
+        self._regs.release(reg)
         self._emit_newline()
 
     def exitAssignStmt(self, ctx: RaraLangParser.AssignStmtContext):
         name = ctx.ID().getText()
-        kind = ctx.expr().kind
-        if kind != "int":
+        expr = ctx.expr()
+        if expr.kind != "int":
             line = ctx.start.line
             raise TypeError(
-                f"Línea {line}: no se puede asignar un valor de tipo {kind!r} "
-                f"a la variable '{name}'. Las variables de iter 2 son enteras."
+                f"Línea {line}: no se puede asignar un valor de tipo "
+                f"{expr.kind!r} a la variable '{name}'. Variables son enteras."
             )
         label = self._intern_var(name)
-        self._emit(f"    # assign {name} <-- (consume $t0)")
-        self._emit(f"    sw   $t0, {label}")
+        reg = expr.reg
+        self._emit(f"    # {name} <-- (consume {reg})")
+        self._emit(f"    sw   {reg}, {label}")
+        self._regs.release(reg)
 
     # ─── Render final del .asm ─────────────────────────────────────────────
 

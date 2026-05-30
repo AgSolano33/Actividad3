@@ -4,7 +4,7 @@ tema: Comparaciones e if/then/else
 tiempo_estimado: 45 min
 ---
 
-# Iteración 4 — Control de flujo
+# Iteración 5 — Control de flujo
 
 ## Meta
 

@@ -1,0 +1,19 @@
+# Iteración 5 — if con y sin else, condiciones verdaderas y falsas.
+# Casos cubiertos:
+#   - if SIN else, cond verdadera  → ejecuta el body
+#   - if SIN else, cond falsa      → no ejecuta NADA
+#   - if CON else, cond verdadera  → ejecuta SOLO then
+#   - if CON else, cond falsa      → ejecuta SOLO else
+#   - reasignación de variable entre ifs
+# Salida esperada:
+#   100
+#   200
+#   500
+#   42
+x <-- 7
+if x > 5 then print 100
+if x < 0 then print 999
+if x == 7 then print 200 else print 300
+if x == 0 then print 400 else print 500
+x <-- 42
+if x == 42 then print x

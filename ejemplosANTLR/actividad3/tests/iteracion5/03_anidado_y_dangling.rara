@@ -1,0 +1,31 @@
+# Iteración 5 — if anidados y el "dangling else" (el else cuelga del
+# if más cercano, como en C/Java).
+#
+# Caso 1: ambas condiciones verdaderas → "1"
+# Caso 2: outer verdadera, inner falsa → "2" (el else del INNER, no del outer)
+# Caso 3: outer falsa → "3"  (else del outer; el inner no se evalúa)
+#
+# Si tu compilador imprimiera "3" en el Caso 2, habría asociado el else
+# al outer (mal). El test 03 demuestra que el else cuelga del inner.
+#
+# Salida esperada:
+#   --- caso 1 ---
+#   1
+#   --- caso 2 ---
+#   2
+#   --- caso 3 ---
+#   3
+print "--- caso 1 ---"
+x <-- 7
+y <-- 3
+if x > 0 then if y > 0 then print 1 else print 2 else print 3
+
+print "--- caso 2 ---"
+x <-- 7
+y <-- 0
+if x > 0 then if y > 0 then print 1 else print 2 else print 3
+
+print "--- caso 3 ---"
+x <-- ±5
+y <-- 3
+if x > 0 then if y > 0 then print 1 else print 2 else print 3

@@ -1,0 +1,27 @@
+# Iteración 5 — Comparaciones usadas como valores en expresiones
+# aritméticas. (x > 0) produce 1 o 0, así que se puede sumar/restar.
+# Cuidado con la precedencia:
+#   (x > 0) + 1   →  (1 ó 0) + 1
+#   x > 0 + 1     →  x > (0+1) = x > 1   (precedencia: + más fuerte que >)
+#
+# Casos con x = 5, 0 y -5:
+#   x= 5: (x>0)+1 = 2 ;  x>0+1 = (5>1) = 1
+#   x= 0: (x>0)+1 = 1 ;  x>0+1 = (0>1) = 0
+#   x=-5: (x>0)+1 = 1 ;  x>0+1 = (-5>1)= 0
+#
+# Salida esperada:
+#   2
+#   1
+#   1
+#   0
+#   1
+#   0
+x <-- 5
+print (x > 0) + 1
+print x > 0 + 1
+x <-- 0
+print (x > 0) + 1
+print x > 0 + 1
+x <-- ±5
+print (x > 0) + 1
+print x > 0 + 1

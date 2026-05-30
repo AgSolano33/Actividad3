@@ -1,50 +1,62 @@
 """
 MIPSListener — Compilador RaraLang → MIPS (QtSPIM)
 
-Iteración 4: operadores enteros Unicode (⊞, ⊠, ≈, ±) sobre la base de
-las tres iteraciones anteriores (literales, variables, aritmética).
+Iteración 5: comparadores (==, !=, <, >) e if/then/else sobre la base de
+las cuatro iteraciones anteriores.
 
 Arquitectura (no cambia):
-  - Sólo patrón Listener de ANTLR. Sin Visitor, sin intérprete.
-  - Cada `expr` deja su resultado en un registro temporal asignado
-    desde un pool LIFO. El operador padre, en su `exit*`, reusa el
-    registro del operando izquierdo como destino y libera el derecho.
-  - La precedencia la decide la GRAMÁTICA por el orden de las
-    alternativas: ± > (× ÷ ⊞) > (⊠ ≈) > (+ -). No hay lógica de
-    precedencia en el listener.
+  - Sólo patrón Listener. Sin Visitor, sin intérprete.
+  - Pool LIFO de registros temporales $t0..$t9.
+  - Convención: cada `expr` deja resultado en `ctx.reg`, tipo en `ctx.kind`.
+  - Precedencia: decidida íntegramente por el orden de alternativas en
+    la gramática. El listener no implementa lógica de precedencia.
 
-Operadores nuevos de iter 4:
-  ⊞ (módulo) — `div rl, rr; mfhi rl` (toma el residuo, no el cociente).
-  ⊠ (doble más) — `sll rl, rl, 1; add rl, rl, rr` (×2 vía shift + suma).
-  ≈ (promedio piso) — `add rl, rl, rr; sra rl, rl, 1` (sra = arith.
-      shift right, que redondea hacia -infinito incluso con negativos).
-  ± (negación)    — `sub rl, $zero, rl`.
+Lo NUEVO en iter 5: control de flujo con if/then/else
+─────────────────────────────────────────────────────
+Problema: cuando el walker termina de procesar un IfStmtContext, ya emitió
+el código de cond, then y else en orden de aparición. Pero MIPS necesita
+INTERCALAR ese código con saltos y etiquetas:
 
-Decisiones documentadas (para auditar):
-  1. ≈ se implementa con `add + sra`, NO con `div by 2 + mflo`. La
-     diferencia es exactamente lo que la guía pide: `sra` redondea
-     hacia -∞ (floor), mientras que `div` trunca hacia 0. Con
-     positivos da lo mismo; con negativos NO.
-  2. ⊠ usa `sll` (shift logical left por 1) en vez de `mult` con 2.
-     Es más rápido y más legible. Limitación: si 2a desborda 32 bits,
-     `sll` simplemente descarta el bit alto (igual que `mult` con `mflo`).
-  3. ⊞ (módulo) usa `mfhi`. SPIM define el residuo como "lo que sobra
-     después de la división trunca-hacia-cero". O sea, `(-10) ⊞ 3`
-     da -1 (no 2 como en Python).
-  4. ± reusa el registro del operando (no asigna uno nuevo). Doble
-     negación `± ±x` emite dos `sub` consecutivos sobre el mismo
-     registro — no es bug, es el camino natural del post-order.
-  5. La precedencia de ⊠ y ≈ es DECIDIDA por mí, no por matemática.
-     Las puse en un nivel propio entre × y +. Es una decisión defendible
-     pero no la única correcta. Ver §auditoría.
+    [cond]
+    beq cond_reg, $zero, else_label     ← inyectado entre cond y then
+    [then]
+    j end_label                          ← inyectado entre then y else
+    else_label:
+    [else]
+    end_label:
+
+Solución: PILA DE BUFFERS. `self._buffers` es un stack; `_emit()` siempre
+escribe al tope. Para cada `if`:
+  1. enterIfStmt empuja `frame.cond` (lista vacía) al stack → el código
+     de la condición se va acumulando ahí.
+  2. enterEveryRule detecta cuándo entramos al primer stmt hijo del if
+     (= terminó la cond, empieza then) y cambia el buffer del tope a
+     `frame.then`. La segunda vez detecta `else`.
+  3. exitIfStmt saca el buffer del tope (`then` o `else_`), ensambla
+     `[cond] + beq + [then] + j_end + label_else + [else_] + label_end`
+     y emite todo eso al buffer que quedó como tope (que es el padre).
+
+¿Por qué `enterIfStmt`/`exitIfStmt` NO bastan? Porque cuando exitIfStmt
+ejecuta, las tres sub-secciones ya están emitidas en un mismo buffer y
+ya no se pueden separar. Necesitamos un evento INTERMEDIO que detecte
+la transición cond→then→else, y ese evento es enterEveryRule observando
+el árbol durante el descenso.
+
+cond_reg: durante todo el then/else, el registro que contiene el valor
+booleano de la condición queda "ocupado" en el pool. Sólo se libera en
+exitIfStmt después del beq.
+
+Labels únicas: contador global `_if_counter`. Cada if estampa
+`if_else_N` / `if_end_N`. Imprescindible para anidamientos: si dos ifs
+compartieran etiquetas, los saltos colisionarían y el segundo if saltaría
+al final del primero.
 """
 
 from antlr.generated.RaraLangListener import RaraLangListener
 from antlr.generated.RaraLangParser import RaraLangParser
 
 
-# Unicode literales — los uso para comparar con ctx.op.text sin pegar
-# bytes raros en el código:
+# Operadores Unicode (para comparar contra ctx.op.text):
 _MUL  = "\u00D7"   # ×
 _DIV  = "\u00F7"   # ÷
 _MOD  = "\u229E"   # ⊞
@@ -53,8 +65,6 @@ _AVG  = "\u2248"   # ≈
 
 
 class _RegisterPool:
-    """Pool LIFO de registros temporales $t0..$t9."""
-
     def __init__(self) -> None:
         self._free: list[str] = [f"$t{i}" for i in range(10)]
 
@@ -70,19 +80,35 @@ class _RegisterPool:
         self._free.insert(0, reg)
 
 
+class _CtrlFrame:
+    """Estado de un `if` activo durante el walk."""
+
+    def __init__(self, id_: int, if_ctx: "RaraLangParser.IfStmtContext") -> None:
+        self.id: int = id_
+        self.if_ctx = if_ctx                # para identificar nuestros hijos directos
+        self.cond: list[str] = []           # buffer para el código de la condición
+        self.then: list[str] = []           # buffer para el código del then
+        self.else_: list[str] = []          # buffer para el código del else
+        self.then_entered: bool = False     # ya cambiamos cond→then?
+        self.else_entered: bool = False     # ya cambiamos then→else?
+
+
 class MIPSListener(RaraLangListener):
     def __init__(self) -> None:
         super().__init__()
         self._data: list[str] = []
         self._text: list[str] = []
+        self._buffers: list[list[str]] = [self._text]   # pila; tope = destino actual de _emit
+        self._frames: list[_CtrlFrame] = []
+        self._if_counter: int = 0
         self._str_counter: int = 0
         self._symbols: dict[str, str] = {}
         self._regs = _RegisterPool()
 
-    # ─── Helpers ───────────────────────────────────────────────────────────
+    # ─── Emisión ───────────────────────────────────────────────────────────
 
     def _emit(self, line: str) -> None:
-        self._text.append(line)
+        self._buffers[-1].append(line)
 
     def _new_str_label(self) -> str:
         label = f"str_{self._str_counter}"
@@ -109,6 +135,30 @@ class MIPSListener(RaraLangListener):
                 f"Línea {line}: el operador {where!r} requiere enteros, "
                 f"no {ctx.kind!r}."
             )
+
+    # ─── Detección de transiciones para if/then/else ──────────────────────
+
+    def enterEveryRule(self, ctx):
+        """Detecta cuándo entramos al stmt-hijo de un if y cambia el buffer
+        activo. Sirve sólo si hay un frame de if en curso y el ctx es un
+        StmtContext (o subclase: PrintStmt/AssignStmt/IfStmt) cuyo padre
+        directo es el IfStmtContext del frame top.
+        """
+        if not self._frames:
+            return
+        if not isinstance(ctx, RaraLangParser.StmtContext):
+            return
+        frame = self._frames[-1]
+        if ctx.parentCtx is not frame.if_ctx:
+            return  # no es nuestro hijo directo (ej. stmt anidado más adentro)
+        if not frame.then_entered:
+            frame.then_entered = True
+            self._buffers.pop()             # cerrar cond
+            self._buffers.append(frame.then)
+        elif not frame.else_entered:
+            frame.else_entered = True
+            self._buffers.pop()             # cerrar then
+            self._buffers.append(frame.else_)
 
     # ─── expr: hojas ───────────────────────────────────────────────────────
 
@@ -212,17 +262,10 @@ class MIPSListener(RaraLangListener):
         self._require_int(right, op)
         rl, rr = left.reg, right.reg
         if op == _DPLS:
-            # ⊠ : 2a + b  →  sll dobla a (×2 sin pasar por mult/mflo),
-            # luego add suma b. Una instrucción menos que la versión naive.
             self._emit(f"    # ⊠ : {rl} := 2*{rl} + {rr}  (sll=×2, add)")
             self._emit(f"    sll  {rl}, {rl}, 1")
             self._emit(f"    add  {rl}, {rl}, {rr}")
         elif op == _AVG:
-            # ≈ : floor((a + b) / 2)  →  add suma, sra (arith. shift right)
-            # divide por 2 *con redondeo hacia -infinito*. Esto es el
-            # comportamiento correcto para negativos según la spec.
-            # Limitación conocida: si (a+b) desborda 32 bits, el resultado
-            # del sra es incorrecto. Trade-off a favor de simplicidad.
             self._emit(f"    # ≈ : {rl} := piso(({rl} + {rr}) / 2)   (add + sra)")
             self._emit(f"    add  {rl}, {rl}, {rr}")
             self._emit(f"    sra  {rl}, {rl}, 1")
@@ -247,7 +290,34 @@ class MIPSListener(RaraLangListener):
         ctx.reg = rl
         ctx.kind = "int"
 
-    # ─── Sentencias ────────────────────────────────────────────────────────
+    # ─── expr: comparadores (== != < >) ────────────────────────────────────
+
+    def exitCompare(self, ctx: RaraLangParser.CompareContext):
+        left, right = ctx.expr(0), ctx.expr(1)
+        op = ctx.op.text
+        self._require_int(left, op)
+        self._require_int(right, op)
+        rl, rr = left.reg, right.reg
+        if op == "==":
+            self._emit(f"    # == : {rl} := ({rl} == {rr}) ? 1 : 0")
+            self._emit(f"    seq  {rl}, {rl}, {rr}")
+        elif op == "!=":
+            self._emit(f"    # != : {rl} := ({rl} != {rr}) ? 1 : 0")
+            self._emit(f"    sne  {rl}, {rl}, {rr}")
+        elif op == "<":
+            self._emit(f"    # <  : {rl} := ({rl} < {rr}) ? 1 : 0")
+            self._emit(f"    slt  {rl}, {rl}, {rr}")
+        elif op == ">":
+            # a > b   ≡   b < a   →   slt con operandos invertidos
+            self._emit(f"    # >  : {rl} := ({rl} > {rr}) ? 1 : 0   (= slt con operandos invertidos)")
+            self._emit(f"    slt  {rl}, {rr}, {rl}")
+        else:
+            raise AssertionError(f"op inesperado en compare: {op!r}")
+        self._regs.release(rr)
+        ctx.reg = rl
+        ctx.kind = "int"
+
+    # ─── Sentencias simples (heredadas de iter 1-4) ────────────────────────
 
     def exitPrintStmt(self, ctx: RaraLangParser.PrintStmtContext):
         expr = ctx.expr()
@@ -281,6 +351,52 @@ class MIPSListener(RaraLangListener):
         self._emit(f"    # {name} <-- (consume {reg})")
         self._emit(f"    sw   {reg}, {label}")
         self._regs.release(reg)
+
+    # ─── Sentencia if/then/else ────────────────────────────────────────────
+
+    def enterIfStmt(self, ctx: RaraLangParser.IfStmtContext):
+        self._if_counter += 1
+        frame = _CtrlFrame(self._if_counter, ctx)
+        self._frames.append(frame)
+        # A partir de aquí, los emits durante la condición van al buffer cond.
+        # enterEveryRule cambiará al buffer then cuando entremos al stmt hijo.
+        self._buffers.append(frame.cond)
+
+    def exitIfStmt(self, ctx: RaraLangParser.IfStmtContext):
+        frame = self._frames.pop()
+        # En el tope hay frame.then (si no había else) o frame.else_; lo sacamos.
+        self._buffers.pop()
+
+        cond_reg = ctx.expr().reg
+        self._require_int(ctx.expr(), "if")
+        has_else = bool(frame.else_)
+        end_lbl = f"if_end_{frame.id}"
+        else_lbl = f"if_else_{frame.id}"
+
+        out = self._buffers[-1]   # buffer del padre — aquí se ensambla todo
+
+        out.append(f"    # ===== if #{frame.id} (linea {ctx.start.line}) =====")
+        out.append(f"    # ----- cond -----")
+        out.extend(frame.cond)
+
+        if has_else:
+            out.append(f"    beq  {cond_reg}, $zero, {else_lbl}   # cond falsa → salta al else")
+            out.append(f"    # ----- then -----")
+            out.extend(frame.then)
+            out.append(f"    j    {end_lbl}                       # then ejecutado → salta al fin")
+            out.append(f"{else_lbl}:")
+            out.append(f"    # ----- else -----")
+            out.extend(frame.else_)
+        else:
+            out.append(f"    beq  {cond_reg}, $zero, {end_lbl}    # cond falsa → salta al fin (no hay else)")
+            out.append(f"    # ----- then -----")
+            out.extend(frame.then)
+
+        out.append(f"{end_lbl}:")
+        out.append(f"    # ===== fin if #{frame.id} =====")
+
+        # El cond_reg estuvo "ocupado" durante todo then/else; ahora se libera.
+        self._regs.release(cond_reg)
 
     # ─── Render final del .asm ─────────────────────────────────────────────
 

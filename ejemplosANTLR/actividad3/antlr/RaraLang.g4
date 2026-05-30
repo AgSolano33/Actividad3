@@ -1,25 +1,29 @@
 grammar RaraLang;
 
-// RaraLang — Iteración 4: operadores enteros Unicode
-//   ⊞ módulo          (a ⊞ b = residuo de a÷b)
-//   ⊠ doble más       (a ⊠ b = 2a + b)
-//   ≈ promedio entero (a ≈ b = floor((a+b)/2))
-//   ± negación unaria (±x = -x)
+// RaraLang — Iteración 5: comparadores (==, !=, <, >) e if/then/else.
 //
-// PRECEDENCIA (decidida por el ORDEN de las alternativas; mayor → primero):
-//   1. ±  (unario, máxima precedencia)
-//   2. × ÷ ⊞   (multiplicativos: comparten ALU mult/div)
-//   3. ⊠ ≈     (operadores custom, nivel intermedio entre × y +)
-//   4. + -     (aditivos, mínima precedencia entre binarios)
-//   5. ( )     atom / agrupación
+// Las comparaciones son expresiones que producen 1 (verdadero) o 0 (falso),
+// por lo que pueden encadenarse con aritmética (`(x > 0) + 1`). El if usa
+// la convención clásica: "ejecutar then si la condición es != 0".
 //
-// Asociatividad: izquierda (default ANTLR4) — correcta para todos.
+// PRECEDENCIA (mayor → menor):
+//   1. ±                       (unario)
+//   2. × ÷ ⊞                   (multiplicativos)
+//   3. ⊠ ≈                     (custom binarios)
+//   4. + -                     (aditivos)
+//   5. == != < >               (comparadores: MENOR precedencia entre binarios)
+//   6. ( )  atom
+//
+// La razón de poner comparadores al final: queremos `x > 0 + 1` parsee como
+// `x > (0 + 1)`, igual que en C/Python/etc. Para forzar la otra agrupación
+// se usan paréntesis: `(x > 0) + 1`.
 
 prog : stmt* EOF ;
 
 stmt
-    : PRINT expr        #printStmt
-    | ID ASSIGN expr    #assignStmt
+    : PRINT expr                        #printStmt
+    | ID ASSIGN expr                    #assignStmt
+    | IF expr THEN stmt (ELSE stmt)?    #ifStmt
     ;
 
 expr
@@ -27,6 +31,7 @@ expr
     | expr op=(MUL|DIV|MOD) expr            #mulDiv
     | expr op=(DOUBLEPLUS|AVG) expr         #customBin
     | expr op=(ADD|SUB) expr                #addSub
+    | expr op=(EQ|NEQ|LT|GT) expr           #compare
     | LPAREN expr RPAREN                    #parens
     | INT                                   #int
     | BASED_NUMBER                          #based
@@ -35,20 +40,29 @@ expr
     ;
 
 // ─── Keywords ─────────────────────────────────────────────────────────────────
+// IMPORTANTE: todas las keywords antes que ID, para que se tokenicen como
+// keywords y no como identificadores.
 
-PRINT  : 'print' ;
+PRINT : 'print' ;
+IF    : 'if' ;
+THEN  : 'then' ;
+ELSE  : 'else' ;
 
 // ─── Operadores ───────────────────────────────────────────────────────────────
 
 ASSIGN     : '<--' ;
 ADD        : '+' ;
 SUB        : '-' ;
-MUL        : '\u00D7' ;     // ×  (U+00D7 MULTIPLICATION SIGN)
-DIV        : '\u00F7' ;     // ÷  (U+00F7 DIVISION SIGN)
-MOD        : '\u229E' ;     // ⊞  (U+229E SQUARED PLUS)        → módulo
-DOUBLEPLUS : '\u22A0' ;     // ⊠  (U+22A0 SQUARED TIMES)       → 2a+b
-AVG        : '\u2248' ;     // ≈  (U+2248 ALMOST EQUAL TO)     → floor((a+b)/2)
-NEG        : '\u00B1' ;     // ±  (U+00B1 PLUS-MINUS SIGN)     → negación
+MUL        : '\u00D7' ;     // ×
+DIV        : '\u00F7' ;     // ÷
+MOD        : '\u229E' ;     // ⊞
+DOUBLEPLUS : '\u22A0' ;     // ⊠
+AVG        : '\u2248' ;     // ≈
+NEG        : '\u00B1' ;     // ±
+EQ         : '==' ;
+NEQ        : '!=' ;
+LT         : '<' ;
+GT         : '>' ;
 LPAREN     : '(' ;
 RPAREN     : ')' ;
 
@@ -58,7 +72,6 @@ INT          : [0-9]+ ;
 BASED_NUMBER : '[' [0-9a-fA-F]+ ':' [0-9]+ ']' ;
 STRING       : '"' (~["\r\n])* '"' ;
 
-// ID DEBE ir después de PRINT para evitar que se tokenice como identificador.
 ID           : [a-zA-Z] [a-zA-Z0-9_]* ;
 
 // ─── Infraestructura ──────────────────────────────────────────────────────────

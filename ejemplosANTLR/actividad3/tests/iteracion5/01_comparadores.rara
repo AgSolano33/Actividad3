@@ -1,0 +1,19 @@
+# Iteración 5 — Cada comparador por separado.
+# Las comparaciones producen 1 (verdadero) o 0 (falso).
+# Salida esperada en QtSPIM:
+#   1
+#   0
+#   1
+#   0
+#   1
+#   0
+#   1
+#   0
+print 5 == 5
+print 5 == 3
+print 5 != 3
+print 5 != 5
+print 3 < 5
+print 5 < 3
+print 5 > 3
+print 3 > 5

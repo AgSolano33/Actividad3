@@ -78,3 +78,6 @@ main:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion3/02_precedencia.asm

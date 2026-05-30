@@ -51,3 +51,6 @@ main:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion1/03_strings.asm

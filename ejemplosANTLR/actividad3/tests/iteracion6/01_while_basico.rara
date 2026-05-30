@@ -1,0 +1,18 @@
+# Iteración 6 — while con número conocido de iteraciones.
+# Imprime 1, 2, 3, luego "fin".
+# También cubre el caso de "cond falsa desde el inicio" (no entra al body).
+# Salida esperada:
+#   1
+#   2
+#   3
+#   fin
+#   (no imprime nada del segundo while)
+x <-- 1
+while x < 4 do {
+  print x
+  x <-- x + 1
+}
+print "fin"
+while x > 1000 do {
+  print 999
+}

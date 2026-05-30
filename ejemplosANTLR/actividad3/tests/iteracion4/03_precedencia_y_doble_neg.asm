@@ -147,3 +147,6 @@ main:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion4/03_precedencia_y_doble_neg.asm

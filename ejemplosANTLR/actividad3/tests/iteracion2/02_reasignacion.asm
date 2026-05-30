@@ -55,3 +55,6 @@ main:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion2/02_reasignacion.asm

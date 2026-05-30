@@ -1,0 +1,33 @@
+# Iteración 6 — if dentro de while y while dentro de if.
+# Verifica que los frames de if y while no se mezclan.
+#
+# Caso 1: while con if adentro (filtra pares).
+#   for x in 0..5: if x ⊞ 2 == 0 then print x  →  imprime 0, 2, 4
+# Caso 2: if con while adentro (solo loop si cond positiva).
+#   if y > 0 then while y > 0 do { print y; y <-- y - 1 }
+#   y=3 → imprime 3, 2, 1
+#   y=±2 → no entra al if
+# Salida esperada:
+#   0
+#   2
+#   4
+#   3
+#   2
+#   1
+#   --- y negativo, if no entra ---
+x <-- 0
+while x < 6 do {
+  if x ⊞ 2 == 0 then print x
+  x <-- x + 1
+}
+y <-- 3
+if y > 0 then while y > 0 do {
+  print y
+  y <-- y - 1
+}
+print "--- y negativo, if no entra ---"
+y <-- ±2
+if y > 0 then while y > 0 do {
+  print 999
+  y <-- y - 1
+}

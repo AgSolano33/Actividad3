@@ -75,3 +75,6 @@ main:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion3/01_cuatro_ops.asm

@@ -95,3 +95,6 @@ main:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion3/03_anidado_y_variables.asm

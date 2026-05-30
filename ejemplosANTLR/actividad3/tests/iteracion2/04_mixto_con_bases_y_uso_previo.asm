@@ -69,3 +69,6 @@ main:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion2/04_mixto_con_bases_y_uso_previo.asm

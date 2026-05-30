@@ -52,3 +52,6 @@ main:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion2/03_nombres_reservados.asm

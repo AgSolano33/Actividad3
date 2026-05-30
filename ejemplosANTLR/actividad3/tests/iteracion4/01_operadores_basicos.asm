@@ -78,3 +78,6 @@ main:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion4/01_operadores_basicos.asm

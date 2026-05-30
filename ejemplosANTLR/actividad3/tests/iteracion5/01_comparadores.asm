@@ -91,7 +91,7 @@ main:
     li   $t0, 5
     # INT 3 → $t1
     li   $t1, 3
-    # >  : $t0 := ($t0 > $t1) ? 1 : 0   (= slt con operandos invertidos)
+    # >  : $t0 := ($t0 > $t1) ? 1 : 0   (slt operandos invertidos)
     slt  $t0, $t1, $t0
     # print int (consume $t0)
     move $a0, $t0
@@ -105,7 +105,7 @@ main:
     li   $t0, 3
     # INT 5 → $t1
     li   $t1, 5
-    # >  : $t0 := ($t0 > $t1) ? 1 : 0   (= slt con operandos invertidos)
+    # >  : $t0 := ($t0 > $t1) ? 1 : 0   (slt operandos invertidos)
     slt  $t0, $t1, $t0
     # print int (consume $t0)
     move $a0, $t0
@@ -119,3 +119,6 @@ main:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion5/01_comparadores.asm

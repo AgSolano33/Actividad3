@@ -32,9 +32,9 @@ main:
     lw   $t0, v_x
     # INT 0 → $t1
     li   $t1, 0
-    # >  : $t0 := ($t0 > $t1) ? 1 : 0   (= slt con operandos invertidos)
+    # >  : $t0 := ($t0 > $t1) ? 1 : 0   (slt operandos invertidos)
     slt  $t0, $t1, $t0
-    beq  $t0, $zero, if_else_1   # cond falsa → salta al else
+    beq  $t0, $zero, if_else_1   # cond falsa → else
     # ----- then -----
     # ===== if #2 (linea 21) =====
     # ----- cond -----
@@ -42,9 +42,9 @@ main:
     lw   $t1, v_y
     # INT 0 → $t2
     li   $t2, 0
-    # >  : $t1 := ($t1 > $t2) ? 1 : 0   (= slt con operandos invertidos)
+    # >  : $t1 := ($t1 > $t2) ? 1 : 0   (slt operandos invertidos)
     slt  $t1, $t2, $t1
-    beq  $t1, $zero, if_else_2   # cond falsa → salta al else
+    beq  $t1, $zero, if_else_2   # cond falsa → else
     # ----- then -----
     # INT 1 → $t2
     li   $t2, 1
@@ -56,7 +56,7 @@ main:
     li   $v0, 11
     li   $a0, 10
     syscall
-    j    if_end_2                       # then ejecutado → salta al fin
+    j    if_end_2                       # then ejecutado → fin
 if_else_2:
     # ----- else -----
     # INT 2 → $t2
@@ -71,7 +71,7 @@ if_else_2:
     syscall
 if_end_2:
     # ===== fin if #2 =====
-    j    if_end_1                       # then ejecutado → salta al fin
+    j    if_end_1                       # then ejecutado → fin
 if_else_1:
     # ----- else -----
     # INT 3 → $t1
@@ -110,9 +110,9 @@ if_end_1:
     lw   $t0, v_x
     # INT 0 → $t1
     li   $t1, 0
-    # >  : $t0 := ($t0 > $t1) ? 1 : 0   (= slt con operandos invertidos)
+    # >  : $t0 := ($t0 > $t1) ? 1 : 0   (slt operandos invertidos)
     slt  $t0, $t1, $t0
-    beq  $t0, $zero, if_else_3   # cond falsa → salta al else
+    beq  $t0, $zero, if_else_3   # cond falsa → else
     # ----- then -----
     # ===== if #4 (linea 26) =====
     # ----- cond -----
@@ -120,9 +120,9 @@ if_end_1:
     lw   $t1, v_y
     # INT 0 → $t2
     li   $t2, 0
-    # >  : $t1 := ($t1 > $t2) ? 1 : 0   (= slt con operandos invertidos)
+    # >  : $t1 := ($t1 > $t2) ? 1 : 0   (slt operandos invertidos)
     slt  $t1, $t2, $t1
-    beq  $t1, $zero, if_else_4   # cond falsa → salta al else
+    beq  $t1, $zero, if_else_4   # cond falsa → else
     # ----- then -----
     # INT 1 → $t2
     li   $t2, 1
@@ -134,7 +134,7 @@ if_end_1:
     li   $v0, 11
     li   $a0, 10
     syscall
-    j    if_end_4                       # then ejecutado → salta al fin
+    j    if_end_4                       # then ejecutado → fin
 if_else_4:
     # ----- else -----
     # INT 2 → $t2
@@ -149,7 +149,7 @@ if_else_4:
     syscall
 if_end_4:
     # ===== fin if #4 =====
-    j    if_end_3                       # then ejecutado → salta al fin
+    j    if_end_3                       # then ejecutado → fin
 if_else_3:
     # ----- else -----
     # INT 3 → $t1
@@ -190,9 +190,9 @@ if_end_3:
     lw   $t0, v_x
     # INT 0 → $t1
     li   $t1, 0
-    # >  : $t0 := ($t0 > $t1) ? 1 : 0   (= slt con operandos invertidos)
+    # >  : $t0 := ($t0 > $t1) ? 1 : 0   (slt operandos invertidos)
     slt  $t0, $t1, $t0
-    beq  $t0, $zero, if_else_5   # cond falsa → salta al else
+    beq  $t0, $zero, if_else_5   # cond falsa → else
     # ----- then -----
     # ===== if #6 (linea 31) =====
     # ----- cond -----
@@ -200,9 +200,9 @@ if_end_3:
     lw   $t1, v_y
     # INT 0 → $t2
     li   $t2, 0
-    # >  : $t1 := ($t1 > $t2) ? 1 : 0   (= slt con operandos invertidos)
+    # >  : $t1 := ($t1 > $t2) ? 1 : 0   (slt operandos invertidos)
     slt  $t1, $t2, $t1
-    beq  $t1, $zero, if_else_6   # cond falsa → salta al else
+    beq  $t1, $zero, if_else_6   # cond falsa → else
     # ----- then -----
     # INT 1 → $t2
     li   $t2, 1
@@ -214,7 +214,7 @@ if_end_3:
     li   $v0, 11
     li   $a0, 10
     syscall
-    j    if_end_6                       # then ejecutado → salta al fin
+    j    if_end_6                       # then ejecutado → fin
 if_else_6:
     # ----- else -----
     # INT 2 → $t2
@@ -229,7 +229,7 @@ if_else_6:
     syscall
 if_end_6:
     # ===== fin if #6 =====
-    j    if_end_5                       # then ejecutado → salta al fin
+    j    if_end_5                       # then ejecutado → fin
 if_else_5:
     # ----- else -----
     # INT 3 → $t1
@@ -248,3 +248,6 @@ if_end_5:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion5/03_anidado_y_dangling.asm

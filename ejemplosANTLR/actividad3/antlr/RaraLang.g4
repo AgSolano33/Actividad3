@@ -1,22 +1,8 @@
 grammar RaraLang;
 
-// RaraLang — Iteración 5: comparadores (==, !=, <, >) e if/then/else.
-//
-// Las comparaciones son expresiones que producen 1 (verdadero) o 0 (falso),
-// por lo que pueden encadenarse con aritmética (`(x > 0) + 1`). El if usa
-// la convención clásica: "ejecutar then si la condición es != 0".
-//
-// PRECEDENCIA (mayor → menor):
-//   1. ±                       (unario)
-//   2. × ÷ ⊞                   (multiplicativos)
-//   3. ⊠ ≈                     (custom binarios)
-//   4. + -                     (aditivos)
-//   5. == != < >               (comparadores: MENOR precedencia entre binarios)
-//   6. ( )  atom
-//
-// La razón de poner comparadores al final: queremos `x > 0 + 1` parsee como
-// `x > (0 + 1)`, igual que en C/Python/etc. Para forzar la otra agrupación
-// se usan paréntesis: `(x > 0) + 1`.
+// RaraLang — Iteración 6: bloques { ... } y while.
+// El block agrupa sentencias sin generar código propio.
+// El while comparte la técnica de buffers del if, con saltos hacia atrás.
 
 prog : stmt* EOF ;
 
@@ -24,6 +10,8 @@ stmt
     : PRINT expr                        #printStmt
     | ID ASSIGN expr                    #assignStmt
     | IF expr THEN stmt (ELSE stmt)?    #ifStmt
+    | WHILE expr DO stmt                #whileStmt
+    | LBRACE stmt* RBRACE               #blockStmt
     ;
 
 expr
@@ -40,13 +28,14 @@ expr
     ;
 
 // ─── Keywords ─────────────────────────────────────────────────────────────────
-// IMPORTANTE: todas las keywords antes que ID, para que se tokenicen como
-// keywords y no como identificadores.
+// Importante: TODAS las keywords antes que ID.
 
 PRINT : 'print' ;
 IF    : 'if' ;
 THEN  : 'then' ;
 ELSE  : 'else' ;
+WHILE : 'while' ;
+DO    : 'do' ;
 
 // ─── Operadores ───────────────────────────────────────────────────────────────
 
@@ -65,6 +54,8 @@ LT         : '<' ;
 GT         : '>' ;
 LPAREN     : '(' ;
 RPAREN     : ')' ;
+LBRACE     : '{' ;
+RBRACE     : '}' ;
 
 // ─── Literales ────────────────────────────────────────────────────────────────
 

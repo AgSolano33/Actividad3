@@ -67,3 +67,6 @@ main:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion1/02_bases.asm

@@ -4,7 +4,7 @@ tema: While y bloques de sentencias
 tiempo_estimado: 30 min
 ---
 
-# Iteración 5 — While y bloques
+# Iteración 6 — While y bloques
 
 ## Meta
 

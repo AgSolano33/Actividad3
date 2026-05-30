@@ -199,3 +199,6 @@ main:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion4/04_mixto_regresion.asm

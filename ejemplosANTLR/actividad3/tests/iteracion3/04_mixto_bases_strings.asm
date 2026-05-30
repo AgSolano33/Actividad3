@@ -77,3 +77,6 @@ main:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion3/04_mixto_bases_strings.asm

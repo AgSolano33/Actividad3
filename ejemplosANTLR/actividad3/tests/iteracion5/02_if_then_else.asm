@@ -14,9 +14,9 @@ main:
     lw   $t0, v_x
     # INT 5 → $t1
     li   $t1, 5
-    # >  : $t0 := ($t0 > $t1) ? 1 : 0   (= slt con operandos invertidos)
+    # >  : $t0 := ($t0 > $t1) ? 1 : 0   (slt operandos invertidos)
     slt  $t0, $t1, $t0
-    beq  $t0, $zero, if_end_1    # cond falsa → salta al fin (no hay else)
+    beq  $t0, $zero, if_end_1    # cond falsa → fin
     # ----- then -----
     # INT 100 → $t1
     li   $t1, 100
@@ -38,7 +38,7 @@ if_end_1:
     li   $t1, 0
     # <  : $t0 := ($t0 < $t1) ? 1 : 0
     slt  $t0, $t0, $t1
-    beq  $t0, $zero, if_end_2    # cond falsa → salta al fin (no hay else)
+    beq  $t0, $zero, if_end_2    # cond falsa → fin
     # ----- then -----
     # INT 999 → $t1
     li   $t1, 999
@@ -60,7 +60,7 @@ if_end_2:
     li   $t1, 7
     # == : $t0 := ($t0 == $t1) ? 1 : 0
     seq  $t0, $t0, $t1
-    beq  $t0, $zero, if_else_3   # cond falsa → salta al else
+    beq  $t0, $zero, if_else_3   # cond falsa → else
     # ----- then -----
     # INT 200 → $t1
     li   $t1, 200
@@ -72,7 +72,7 @@ if_end_2:
     li   $v0, 11
     li   $a0, 10
     syscall
-    j    if_end_3                       # then ejecutado → salta al fin
+    j    if_end_3                       # then ejecutado → fin
 if_else_3:
     # ----- else -----
     # INT 300 → $t1
@@ -95,7 +95,7 @@ if_end_3:
     li   $t1, 0
     # == : $t0 := ($t0 == $t1) ? 1 : 0
     seq  $t0, $t0, $t1
-    beq  $t0, $zero, if_else_4   # cond falsa → salta al else
+    beq  $t0, $zero, if_else_4   # cond falsa → else
     # ----- then -----
     # INT 400 → $t1
     li   $t1, 400
@@ -107,7 +107,7 @@ if_end_3:
     li   $v0, 11
     li   $a0, 10
     syscall
-    j    if_end_4                       # then ejecutado → salta al fin
+    j    if_end_4                       # then ejecutado → fin
 if_else_4:
     # ----- else -----
     # INT 500 → $t1
@@ -134,7 +134,7 @@ if_end_4:
     li   $t1, 42
     # == : $t0 := ($t0 == $t1) ? 1 : 0
     seq  $t0, $t0, $t1
-    beq  $t0, $zero, if_end_5    # cond falsa → salta al fin (no hay else)
+    beq  $t0, $zero, if_end_5    # cond falsa → fin
     # ----- then -----
     # VAR x (v_x) → $t1
     lw   $t1, v_x
@@ -152,3 +152,6 @@ if_end_5:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion5/02_if_then_else.asm

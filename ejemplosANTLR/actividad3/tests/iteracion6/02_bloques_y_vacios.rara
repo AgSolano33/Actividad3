@@ -1,0 +1,24 @@
+# Iteración 6 — bloques (incluyendo {}) y casos donde block es body
+# del if y del while.
+# Casos cubiertos:
+#   - {} top-level vacío  → no genera código, no falla
+#   - block con varias sentencias top-level
+#   - while con {} como body → loop infinito si la cond es verdadera;
+#     aquí la cond es falsa, así que ni entra
+#   - if/else donde la rama then es {} (vacía) y la else SÍ tiene código
+# Salida esperada:
+#   10
+#   11
+#   20
+#   --- if con then vacío ---
+#   else ejecuta
+{}
+x <-- 10
+{
+  print x
+  print x + 1
+  print x × 2
+}
+while x > 1000 do {}
+print "--- if con then vacío ---"
+if x == 0 then {} else { print "else ejecuta" }

@@ -79,3 +79,6 @@ main:
     # exit
     li   $v0, 10
     syscall
+
+
+# → tests/iteracion4/02_promedio_negativos.asm

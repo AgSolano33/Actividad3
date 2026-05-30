@@ -26,7 +26,7 @@ main:
     li   $t2, 1
     # - : $t1 := $t1 - $t2
     sub  $t1, $t1, $t2
-    # × : $t0 := $t0 × $t1  (mult, residuo n/a)
+    # × : $t0 := $t0 × $t1
     mult $t0, $t1
     mflo $t0
     # print int (consume $t0)
@@ -45,7 +45,7 @@ main:
     lw   $t2, v_a
     # VAR b (v_b) → $t3
     lw   $t3, v_b
-    # × : $t2 := $t2 × $t3  (mult, residuo n/a)
+    # × : $t2 := $t2 × $t3
     mult $t2, $t3
     mflo $t2
     # + : $t1 := $t1 + $t2
@@ -72,7 +72,7 @@ main:
     li   $t2, 1
     # - : $t1 := $t1 - $t2
     sub  $t1, $t1, $t2
-    # × : $t0 := $t0 × $t1  (mult, residuo n/a)
+    # × : $t0 := $t0 × $t1
     mult $t0, $t1
     mflo $t0
     # total <-- (consume $t0)

@@ -45,7 +45,7 @@ main:
     lw   $t0, v_x
     # VAR y (v_y) → $t1
     lw   $t1, v_y
-    # × : $t0 := $t0 × $t1  (mult, residuo n/a)
+    # × : $t0 := $t0 × $t1
     mult $t0, $t1
     mflo $t0
     # print int (consume $t0)
@@ -60,7 +60,7 @@ main:
     lw   $t0, v_x
     # VAR y (v_y) → $t1
     lw   $t1, v_y
-    # ÷ : $t0 := $t0 ÷ $t1  (mflo = cociente; HI = residuo, descartado)
+    # ÷ : $t0 := $t0 ÷ $t1   (mflo = cociente)
     div  $t0, $t1
     mflo $t0
     # print int (consume $t0)

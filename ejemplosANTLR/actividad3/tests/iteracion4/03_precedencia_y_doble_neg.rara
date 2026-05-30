@@ -1,0 +1,30 @@
+# Iteración 4 — Precedencia entre operadores Unicode y aritméticos,
+# y doble/triple negación. Calcular a mano antes de correr.
+#
+# Niveles de precedencia (mayor a menor): ± > (× ÷ ⊞) > (⊠ ≈) > (+ -)
+#
+#   ± ±5        →  +5    (doble negación)
+#   ± ± ±7      →  -7    (triple negación)
+#   ±2 + 3      →  1     (± liga más fuerte que +; (-2) + 3)
+#   1 + 2 ⊠ 3   →  8     (⊠ más fuerte que +; 1 + (2*2 + 3))
+#   2 × 3 ⊠ 4   →  16    (× más fuerte que ⊠; (2×3) ⊠ 4 = 12 + 4)
+#   10 ⊞ 3 + 5  →  6     (⊞ más fuerte que +; (10 mod 3) + 5 = 1 + 5)
+#   ±2 ⊠ 3      →  -1    (± más fuerte que ⊠; (-2) ⊠ 3 = 2*(-2) + 3)
+#   8 ≈ 4 + 2   →  8     (≈ más fuerte que +; floor((8+4)/2) + 2 = 6 + 2)
+# Esperado:
+#   5
+#   -7
+#   1
+#   8
+#   16
+#   6
+#   -1
+#   8
+print ± ±5
+print ± ± ±7
+print ±2 + 3
+print 1 + 2 ⊠ 3
+print 2 × 3 ⊠ 4
+print 10 ⊞ 3 + 5
+print ±2 ⊠ 3
+print 8 ≈ 4 + 2

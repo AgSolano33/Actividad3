@@ -33,7 +33,7 @@ main:
     li   $t0, 10
     # INT 2 → $t1
     li   $t1, 2
-    # × : $t0 := $t0 × $t1  (mult, residuo n/a)
+    # × : $t0 := $t0 × $t1
     mult $t0, $t1
     mflo $t0
     # print int (consume $t0)
@@ -52,7 +52,7 @@ main:
     add  $t0, $t0, $t1
     # INT 3 → $t1
     li   $t1, 3
-    # × : $t0 := $t0 × $t1  (mult, residuo n/a)
+    # × : $t0 := $t0 × $t1
     mult $t0, $t1
     mflo $t0
     # print int (consume $t0)

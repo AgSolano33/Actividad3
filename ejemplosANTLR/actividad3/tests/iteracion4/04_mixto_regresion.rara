@@ -1,0 +1,41 @@
+# Iteración 4 — Mezcla operadores Unicode con variables, strings, bases.
+# Sirve como regresión de iter 1/2/3 además de cubrir iter 4.
+#
+# a = 9, b = 5
+#   a ⊠ b               =  2*9 + 5  = 23
+#   17 ⊞ 5              =  17 mod 5 = 2
+#   ±7 ≈ 1              =  floor((-7 + 1)/2) = floor(-3) = -3
+#   ±(a + 1)            =  -(9+1) = -10  (paréntesis fuerzan el árbol)
+#   [FF:16] ⊞ [A:16]    =  255 mod 10 = 5  (mezcla con bases)
+#   ±[1010:2] + 3       =  -10 + 3 = -7   (mezcla negación con base 2)
+# Esperado:
+#   --- mezcla ---
+#   doble más:
+#   23
+#   modulo:
+#   2
+#   promedio negativo:
+#   -3
+#   negacion:
+#   -10
+#   modulo de hex:
+#   5
+#   neg de binario + 3:
+#   -7
+#   FIN
+a <-- 9
+b <-- 5
+print "--- mezcla ---"
+print "doble más:"
+print a ⊠ b
+print "modulo:"
+print 17 ⊞ 5
+print "promedio negativo:"
+print ±7 ≈ 1
+print "negacion:"
+print ±(a + 1)
+print "modulo de hex:"
+print [FF:16] ⊞ [A:16]
+print "neg de binario + 3:"
+print ±[1010:2] + 3
+print "FIN"

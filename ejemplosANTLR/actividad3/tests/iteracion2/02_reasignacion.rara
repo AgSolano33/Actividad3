@@ -6,7 +6,8 @@
 # Salida esperada en QtSPIM:
 #   1
 #   2
-#   1
+#   2     ← copia se quedó con el valor 2 (que tenía contador al momento
+#           del copy), aunque después contador haya pasado a 99
 contador <-- 1
 print contador
 contador <-- 2

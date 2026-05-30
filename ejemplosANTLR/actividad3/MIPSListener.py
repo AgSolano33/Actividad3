@@ -1,66 +1,59 @@
 """
 MIPSListener — Compilador RaraLang → MIPS (QtSPIM)
 
-Iteración 3: aritmética binaria (+, -, ×, ÷) con paréntesis, sobre la
-base de iteración 1 (literales/print/strings/bases) e iteración 2
-(variables enteras + asignación).
+Iteración 4: operadores enteros Unicode (⊞, ⊠, ≈, ±) sobre la base de
+las tres iteraciones anteriores (literales, variables, aritmética).
 
-Arquitectura (sigue siendo estricta):
-  - SOLO patrón Listener. No hay Visitor. No hay intérprete. No se
-    evalúan expresiones del programa en Python (la única excepción es
-    el folding compile-time de `BASED_NUMBER` — convertir el texto del
-    literal a un entero — que NO es interpretar al programa).
-  - Generación de código en post-order: el walker visita hijos antes
-    que padres, así cuando una alternativa de operador binario corre su
-    `exit*`, las dos sub-expresiones YA dejaron su resultado en sendos
-    registros temporales.
+Arquitectura (no cambia):
+  - Sólo patrón Listener de ANTLR. Sin Visitor, sin intérprete.
+  - Cada `expr` deja su resultado en un registro temporal asignado
+    desde un pool LIFO. El operador padre, en su `exit*`, reusa el
+    registro del operando izquierdo como destino y libera el derecho.
+  - La precedencia la decide la GRAMÁTICA por el orden de las
+    alternativas: ± > (× ÷ ⊞) > (⊠ ≈) > (+ -). No hay lógica de
+    precedencia en el listener.
 
-Modelo de evaluación de expresiones:
-  Cada alternativa de `expr` deja:
-      ctx.reg  → nombre de un registro $tN que contiene su valor (o,
-                 para STRING, la dirección del .asciiz)
-      ctx.kind → "int" | "string"
-  Los operadores binarios (mulDiv, addSub) toman ctx.expr(0).reg y
-  ctx.expr(1).reg, emiten la operación MIPS, LIBERAN el registro
-  derecho y reusan el izquierdo como destino. Esto da una "pila de
-  registros" estática (la del compilador), no una pila en memoria de
-  ejecución — más rápido y más legible en el .asm.
-
-Precedencia:
-  Se resuelve por la GRAMÁTICA, no por el listener. ANTLR4 con
-  recursión izquierda en una sola regla usa el orden textual de las
-  alternativas para dar prioridad: `mulDiv` está antes que `addSub`,
-  por lo tanto `×` y `÷` ligan más fuerte que `+` y `-`. El árbol
-  sintáctico que llega al listener YA tiene `2 + 3 × 4` agrupado como
-  `2 + (3 × 4)`. El listener no necesita lógica de precedencia.
+Operadores nuevos de iter 4:
+  ⊞ (módulo) — `div rl, rr; mfhi rl` (toma el residuo, no el cociente).
+  ⊠ (doble más) — `sll rl, rl, 1; add rl, rl, rr` (×2 vía shift + suma).
+  ≈ (promedio piso) — `add rl, rl, rr; sra rl, rl, 1` (sra = arith.
+      shift right, que redondea hacia -infinito incluso con negativos).
+  ± (negación)    — `sub rl, $zero, rl`.
 
 Decisiones documentadas (para auditar):
-  1. División por cero NO se detecta en compile-time. SPIM la marca
-     en runtime con un trap. Defendible: detectarlo solo cubriría el
-     literal `÷ 0`; el caso `x ÷ y` con y=0 requiere análisis de flujo
-     que no toca a iter 3.
-  2. El RESIDUO de `÷` se pierde — usamos `mflo` (cociente) y nunca
-     leemos HI. RaraLang no tiene operador de módulo en iter 3.
-  3. OVERFLOW en `×` es silencioso — `mflo` toma solo los 32 bits
-     bajos. La parte alta (`mfhi`) se ignora.
-  4. Profundidad máxima de expresión: 10 registros temporales
-     ($t0..$t9). Una expresión derecha-asociativa muy anidada agotaría
-     el pool. Se reporta como error de compilación claro.
-  5. La aritmética sobre strings es ERROR de tipo en compile-time
-     (no concatenación). Misma postura que iter 2.
+  1. ≈ se implementa con `add + sra`, NO con `div by 2 + mflo`. La
+     diferencia es exactamente lo que la guía pide: `sra` redondea
+     hacia -∞ (floor), mientras que `div` trunca hacia 0. Con
+     positivos da lo mismo; con negativos NO.
+  2. ⊠ usa `sll` (shift logical left por 1) en vez de `mult` con 2.
+     Es más rápido y más legible. Limitación: si 2a desborda 32 bits,
+     `sll` simplemente descarta el bit alto (igual que `mult` con `mflo`).
+  3. ⊞ (módulo) usa `mfhi`. SPIM define el residuo como "lo que sobra
+     después de la división trunca-hacia-cero". O sea, `(-10) ⊞ 3`
+     da -1 (no 2 como en Python).
+  4. ± reusa el registro del operando (no asigna uno nuevo). Doble
+     negación `± ±x` emite dos `sub` consecutivos sobre el mismo
+     registro — no es bug, es el camino natural del post-order.
+  5. La precedencia de ⊠ y ≈ es DECIDIDA por mí, no por matemática.
+     Las puse en un nivel propio entre × y +. Es una decisión defendible
+     pero no la única correcta. Ver §auditoría.
 """
 
 from antlr.generated.RaraLangListener import RaraLangListener
 from antlr.generated.RaraLangParser import RaraLangParser
 
 
-class _RegisterPool:
-    """Pool LIFO de registros temporales $t0..$t9.
+# Unicode literales — los uso para comparar con ctx.op.text sin pegar
+# bytes raros en el código:
+_MUL  = "\u00D7"   # ×
+_DIV  = "\u00F7"   # ÷
+_MOD  = "\u229E"   # ⊞
+_DPLS = "\u22A0"   # ⊠
+_AVG  = "\u2248"   # ≈
 
-    `allocate()` saca el de menor número libre; `release()` lo devuelve
-    al frente, por lo que la siguiente `allocate()` lo reusa de inmediato.
-    Esto es la "pila de registros" mencionada en la guía de iter 3.
-    """
+
+class _RegisterPool:
+    """Pool LIFO de registros temporales $t0..$t9."""
 
     def __init__(self) -> None:
         self._free: list[str] = [f"$t{i}" for i in range(10)]
@@ -69,8 +62,7 @@ class _RegisterPool:
         if not self._free:
             raise RuntimeError(
                 "Sin registros temporales: la expresión es demasiado "
-                "profunda (>10 valores vivos simultáneamente). "
-                "Considera asignar subexpresiones a variables."
+                "profunda (>10 valores vivos simultáneamente)."
             )
         return self._free.pop(0)
 
@@ -87,7 +79,7 @@ class MIPSListener(RaraLangListener):
         self._symbols: dict[str, str] = {}
         self._regs = _RegisterPool()
 
-    # ─── Helpers de emisión y tabla de símbolos ────────────────────────────
+    # ─── Helpers ───────────────────────────────────────────────────────────
 
     def _emit(self, line: str) -> None:
         self._text.append(line)
@@ -114,11 +106,11 @@ class MIPSListener(RaraLangListener):
         if ctx.kind != "int":
             line = ctx.start.line
             raise TypeError(
-                f"Línea {line}: operación aritmética '{where}' requiere "
-                f"enteros, no {ctx.kind!r}."
+                f"Línea {line}: el operador {where!r} requiere enteros, "
+                f"no {ctx.kind!r}."
             )
 
-    # ─── expr: hojas — cada una deja su resultado en un registro nuevo ─────
+    # ─── expr: hojas ───────────────────────────────────────────────────────
 
     def exitInt(self, ctx: RaraLangParser.IntContext):
         text = ctx.INT().getText()
@@ -169,14 +161,78 @@ class MIPSListener(RaraLangListener):
         ctx.reg = reg
         ctx.kind = "int"
 
-    # ─── expr: paréntesis — solo propagación ───────────────────────────────
-
     def exitParens(self, ctx: RaraLangParser.ParensContext):
         inner = ctx.expr()
         ctx.reg = inner.reg
         ctx.kind = inner.kind
 
-    # ─── expr: operadores binarios ─────────────────────────────────────────
+    # ─── expr: unario ± ────────────────────────────────────────────────────
+
+    def exitNeg(self, ctx: RaraLangParser.NegContext):
+        inner = ctx.expr()
+        self._require_int(inner, "±")
+        r = inner.reg
+        self._emit(f"    # ± : {r} := 0 - {r}")
+        self._emit(f"    sub  {r}, $zero, {r}")
+        ctx.reg = r
+        ctx.kind = "int"
+
+    # ─── expr: binarios multiplicativos (× ÷ ⊞) ────────────────────────────
+
+    def exitMulDiv(self, ctx: RaraLangParser.MulDivContext):
+        left, right = ctx.expr(0), ctx.expr(1)
+        op = ctx.op.text
+        self._require_int(left, op)
+        self._require_int(right, op)
+        rl, rr = left.reg, right.reg
+        if op == _MUL:
+            self._emit(f"    # × : {rl} := {rl} × {rr}")
+            self._emit(f"    mult {rl}, {rr}")
+            self._emit(f"    mflo {rl}")
+        elif op == _DIV:
+            self._emit(f"    # ÷ : {rl} := {rl} ÷ {rr}   (mflo = cociente)")
+            self._emit(f"    div  {rl}, {rr}")
+            self._emit(f"    mflo {rl}")
+        elif op == _MOD:
+            self._emit(f"    # ⊞ : {rl} := {rl} mod {rr}  (mfhi = residuo)")
+            self._emit(f"    div  {rl}, {rr}")
+            self._emit(f"    mfhi {rl}")
+        else:
+            raise AssertionError(f"op inesperado en mulDiv: {op!r}")
+        self._regs.release(rr)
+        ctx.reg = rl
+        ctx.kind = "int"
+
+    # ─── expr: binarios custom (⊠ ≈) ───────────────────────────────────────
+
+    def exitCustomBin(self, ctx: RaraLangParser.CustomBinContext):
+        left, right = ctx.expr(0), ctx.expr(1)
+        op = ctx.op.text
+        self._require_int(left, op)
+        self._require_int(right, op)
+        rl, rr = left.reg, right.reg
+        if op == _DPLS:
+            # ⊠ : 2a + b  →  sll dobla a (×2 sin pasar por mult/mflo),
+            # luego add suma b. Una instrucción menos que la versión naive.
+            self._emit(f"    # ⊠ : {rl} := 2*{rl} + {rr}  (sll=×2, add)")
+            self._emit(f"    sll  {rl}, {rl}, 1")
+            self._emit(f"    add  {rl}, {rl}, {rr}")
+        elif op == _AVG:
+            # ≈ : floor((a + b) / 2)  →  add suma, sra (arith. shift right)
+            # divide por 2 *con redondeo hacia -infinito*. Esto es el
+            # comportamiento correcto para negativos según la spec.
+            # Limitación conocida: si (a+b) desborda 32 bits, el resultado
+            # del sra es incorrecto. Trade-off a favor de simplicidad.
+            self._emit(f"    # ≈ : {rl} := piso(({rl} + {rr}) / 2)   (add + sra)")
+            self._emit(f"    add  {rl}, {rl}, {rr}")
+            self._emit(f"    sra  {rl}, {rl}, 1")
+        else:
+            raise AssertionError(f"op inesperado en customBin: {op!r}")
+        self._regs.release(rr)
+        ctx.reg = rl
+        ctx.kind = "int"
+
+    # ─── expr: binarios aditivos (+ -) ─────────────────────────────────────
 
     def exitAddSub(self, ctx: RaraLangParser.AddSubContext):
         left, right = ctx.expr(0), ctx.expr(1)
@@ -187,24 +243,6 @@ class MIPSListener(RaraLangListener):
         mnemonic = "add " if op == "+" else "sub "
         self._emit(f"    # {op} : {rl} := {rl} {op} {rr}")
         self._emit(f"    {mnemonic} {rl}, {rl}, {rr}")
-        self._regs.release(rr)
-        ctx.reg = rl
-        ctx.kind = "int"
-
-    def exitMulDiv(self, ctx: RaraLangParser.MulDivContext):
-        left, right = ctx.expr(0), ctx.expr(1)
-        op = ctx.op.text
-        self._require_int(left, op)
-        self._require_int(right, op)
-        rl, rr = left.reg, right.reg
-        if op == "\u00D7":   # ×
-            self._emit(f"    # × : {rl} := {rl} × {rr}  (mult, residuo n/a)")
-            self._emit(f"    mult {rl}, {rr}")
-            self._emit(f"    mflo {rl}")
-        else:                 # ÷
-            self._emit(f"    # ÷ : {rl} := {rl} ÷ {rr}  (mflo = cociente; HI = residuo, descartado)")
-            self._emit(f"    div  {rl}, {rr}")
-            self._emit(f"    mflo {rl}")
         self._regs.release(rr)
         ctx.reg = rl
         ctx.kind = "int"

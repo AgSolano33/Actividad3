@@ -1,0 +1,12 @@
+# Iteración 4 — Cada operador Unicode por separado
+# Salida esperada en QtSPIM:
+#   1       # 10 ⊞ 3 = residuo de 10/3 (cociente 3, sobra 1)
+#   13      # 4 ⊠ 5  = 2*4 + 5
+#   5       # 7 ≈ 3  = floor((7+3)/2)
+#   -8      # ±8     = negación
+#   16      # ± ±16  = doble negación, vuelve al original
+print 10 ⊞ 3
+print 4 ⊠ 5
+print 7 ≈ 3
+print ±8
+print ± ±16
